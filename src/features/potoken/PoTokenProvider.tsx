@@ -83,6 +83,58 @@ type PendingApiCall = { resolve: (data: any) => void; reject: (e: Error) => void
 let _pendingApiCalls = new Map<string, PendingApiCall>();
 
 let _cookiesEstablished = false;
+let _visitorData: string | null = null;
+let _sessionPromise: Promise<void> | null = null;
+
+export function getVisitorData(): string | null {
+  return _visitorData;
+}
+
+// Establish YouTube session (cookies + visitorData) before making API calls.
+// Returns a promise that resolves once visitorData is extracted.
+export function ensureYouTubeSession(): Promise<void> {
+  if (_cookiesEstablished && _visitorData) return Promise.resolve();
+  if (_sessionPromise) return _sessionPromise;
+  if (!_webViewRef) return Promise.reject(new Error('WebView not ready'));
+
+  _sessionPromise = new Promise<void>((resolve, reject) => {
+    const js = `
+      (function() {
+        fetch('https://www.youtube.com/', { credentials: 'include' })
+          .then(function(r) { return r.text(); })
+          .then(function(html) {
+            var match = html.match(/"VISITOR_DATA"\\s*:\\s*"([^"]+)"/);
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'SESSION_READY',
+              visitorData: (match && match[1]) ? match[1] : null
+            }));
+          })
+          .catch(function(e) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'SESSION_READY', visitorData: null, error: String(e.message || e)
+            }));
+          });
+      })(); true;
+    `;
+
+    // Store resolve so onMessage can call it
+    _sessionResolve = resolve;
+
+    _webViewRef!.injectJavaScript(js);
+    _cookiesEstablished = true;
+
+    setTimeout(() => {
+      // Resolve even on timeout — caller can proceed without visitorData
+      _sessionResolve = null;
+      _sessionPromise = null;
+      resolve();
+    }, 10000);
+  });
+
+  return _sessionPromise;
+}
+
+let _sessionResolve: (() => void) | null = null;
 
 export async function youtubeApiCallViaWebView(
   endpoint: string,
@@ -91,60 +143,48 @@ export async function youtubeApiCallViaWebView(
 ): Promise<any> {
   if (!_webViewRef) throw new Error('WebView not ready');
 
+  // Ensure session is established before any API call
+  await ensureYouTubeSession();
+
   const callId = Math.random().toString(36).slice(2);
 
   return new Promise<any>((resolve, reject) => {
     _pendingApiCalls.set(callId, { resolve, reject });
 
-    // First establish YouTube cookies if not done yet, then make the API call.
-    // The cookie fetch visits youtube.com which sets CONSENT, VISITOR_INFO, etc.
-    const apiCallJs = `
-      fetch(${JSON.stringify(endpoint)}, {
-        method: 'POST',
-        headers: ${JSON.stringify({ 'Content-Type': 'application/json', ...headers })},
-        body: ${JSON.stringify(JSON.stringify(body))},
-        credentials: 'include',
-      })
-        .then(function(r) {
-          if (!r.ok) {
-            return r.text().then(function(t) {
+    const js = `
+      (function() {
+        fetch(${JSON.stringify(endpoint)}, {
+          method: 'POST',
+          headers: ${JSON.stringify({ 'Content-Type': 'application/json', ...headers })},
+          body: ${JSON.stringify(JSON.stringify(body))},
+          credentials: 'include',
+        })
+          .then(function(r) {
+            if (!r.ok) {
+              return r.text().then(function(t) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'API_CALL', callId: ${JSON.stringify(callId)},
+                  error: 'HTTP ' + r.status + ': ' + t.substring(0, 500)
+                }));
+              });
+            }
+            return r.json().then(function(data) {
               window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'API_CALL', callId: ${JSON.stringify(callId)},
-                error: 'HTTP ' + r.status + ': ' + t.substring(0, 500)
+                data: data
               }));
             });
-          }
-          return r.json().then(function(data) {
+          })
+          .catch(function(e) {
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'API_CALL', callId: ${JSON.stringify(callId)},
-              data: data
+              error: String(e.message || e)
             }));
-          });
-        })
-        .catch(function(e) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'API_CALL', callId: ${JSON.stringify(callId)},
-            error: String(e.message || e)
-          }));
-        });
-    `;
-
-    const js = _cookiesEstablished ? `(function() { ${apiCallJs} })(); true;` : `
-      (function() {
-        // First visit youtube.com to establish session cookies
-        fetch('https://www.youtube.com/', { credentials: 'include' })
-          .then(function() {
-            ${apiCallJs}
-          })
-          .catch(function() {
-            // Even if the cookie fetch fails, try the API call anyway
-            ${apiCallJs}
           });
       })(); true;
     `;
 
     _webViewRef!.injectJavaScript(js);
-    _cookiesEstablished = true;
 
     setTimeout(() => {
       if (_pendingApiCalls.has(callId)) {
@@ -256,6 +296,18 @@ export function PoTokenProvider() {
         } else {
           console.error('[potoken] mint error (no pending):', data.error);
         }
+        break;
+      }
+
+      case 'SESSION_READY': {
+        if (data.visitorData) {
+          _visitorData = data.visitorData;
+          if (__DEV__) console.log('[potoken] got visitorData, length:', data.visitorData.length);
+        } else {
+          if (__DEV__) console.warn('[potoken] session ready but no visitorData', data.error ?? '');
+        }
+        _sessionResolve?.();
+        _sessionResolve = null;
         break;
       }
 

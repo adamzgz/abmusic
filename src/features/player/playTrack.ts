@@ -1,5 +1,5 @@
 import TrackPlayer from 'react-native-track-player';
-import { getStreamUrl } from '@/features/youtube/streams';
+import { getStreamViaInnertubeVR } from '@/features/youtube/innertube-vr';
 import { getStreamViaAndroidVR } from '@/features/youtube/android-vr-client';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { useSettingsStore } from '@/core/store/settingsStore';
@@ -7,31 +7,31 @@ import { addToHistory } from '@/features/library/history';
 import { getOfflineUrl } from '@/features/cache/offlineCache';
 import type { MusicTrack } from '@/features/youtube/types';
 
-// Resolve a playable URL: offline cache → direct (Cronet) → proxy fallback.
+// Resolve a playable URL: offline cache → VR direct → proxy fallback.
 async function resolveForPlayback(trackId: string): Promise<string> {
   const offlineUrl = await getOfflineUrl(trackId);
   if (offlineUrl) return offlineUrl;
 
   const quality = useSettingsStore.getState().audioQuality;
 
-  // Strategy 1: Direct resolution via youtubei.js
-  // ExoPlayer now uses Cronet (Chrome TLS fingerprint) so YouTube CDN
-  // should accept the request without the yt-dlp proxy.
+  // Strategy 1: android_vr InnerTube client via WebView (Chrome TLS)
+  // Returns pre-authenticated URLs — no decipher/sig transform needed.
+  // ExoPlayer uses Cronet to download, so CDN accepts the request.
   try {
-    const stream = await getStreamUrl(trackId, quality);
+    const stream = await getStreamViaInnertubeVR(trackId, quality);
     if (__DEV__) {
-      console.log('[resolve] DIRECT url length:', stream.url.length,
+      console.log('[resolve] VR DIRECT url length:', stream.url.length,
         'itag:', stream.itag, 'mime:', stream.mimeType);
     }
     return stream.url;
   } catch (e: any) {
     if (__DEV__) {
-      console.warn('[resolve] Direct resolution failed:', e?.message);
+      console.warn('[resolve] VR direct failed:', e?.message);
       console.log('[resolve] Falling back to yt-dlp proxy...');
     }
   }
 
-  // Strategy 2: Fallback to yt-dlp proxy server
+  // Strategy 2: Fallback to yt-dlp proxy server (dev/backup)
   const stream = await getStreamViaAndroidVR(trackId, quality);
   if (__DEV__) {
     console.log('[resolve] PROXY url length:', stream.url.length);
