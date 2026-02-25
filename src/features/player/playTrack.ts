@@ -1,4 +1,5 @@
 import TrackPlayer from 'react-native-track-player';
+import { getStreamUrl } from '@/features/youtube/streams';
 import { getStreamViaAndroidVR } from '@/features/youtube/android-vr-client';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { useSettingsStore } from '@/core/store/settingsStore';
@@ -6,40 +7,35 @@ import { addToHistory } from '@/features/library/history';
 import { getOfflineUrl } from '@/features/cache/offlineCache';
 import type { MusicTrack } from '@/features/youtube/types';
 
-const MIN_REQUEST_GAP_MS = 1500;
-let lastRequestTime = 0;
-
-async function rateLimit(): Promise<void> {
-  const now = Date.now();
-  const elapsed = now - lastRequestTime;
-  if (elapsed < MIN_REQUEST_GAP_MS && lastRequestTime > 0) {
-    await new Promise((r) => setTimeout(r, MIN_REQUEST_GAP_MS - elapsed));
-  }
-  lastRequestTime = Date.now();
-}
-
-// Resolve a playable URL: offline cache → ANDROID_VR direct URL.
+// Resolve a playable URL: offline cache → direct (Cronet) → proxy fallback.
 async function resolveForPlayback(trackId: string): Promise<string> {
   const offlineUrl = await getOfflineUrl(trackId);
   if (offlineUrl) return offlineUrl;
 
-  await rateLimit();
-
   const quality = useSettingsStore.getState().audioQuality;
-  const stream = await getStreamViaAndroidVR(trackId, quality);
 
-  if (__DEV__) {
-    console.log('[resolve] url length:', stream.url.length,
-      'itag:', stream.itag, 'mime:', stream.mimeType);
-    // Quick test if URL is accessible
-    try {
-      const test = await fetch(stream.url, { method: 'HEAD' });
-      console.log('[resolve] HEAD test:', test.status);
-    } catch (e: any) {
-      console.warn('[resolve] HEAD test failed:', e?.message);
+  // Strategy 1: Direct resolution via youtubei.js
+  // ExoPlayer now uses Cronet (Chrome TLS fingerprint) so YouTube CDN
+  // should accept the request without the yt-dlp proxy.
+  try {
+    const stream = await getStreamUrl(trackId, quality);
+    if (__DEV__) {
+      console.log('[resolve] DIRECT url length:', stream.url.length,
+        'itag:', stream.itag, 'mime:', stream.mimeType);
+    }
+    return stream.url;
+  } catch (e: any) {
+    if (__DEV__) {
+      console.warn('[resolve] Direct resolution failed:', e?.message);
+      console.log('[resolve] Falling back to yt-dlp proxy...');
     }
   }
 
+  // Strategy 2: Fallback to yt-dlp proxy server
+  const stream = await getStreamViaAndroidVR(trackId, quality);
+  if (__DEV__) {
+    console.log('[resolve] PROXY url length:', stream.url.length);
+  }
   return stream.url;
 }
 
