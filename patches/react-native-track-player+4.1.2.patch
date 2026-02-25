@@ -1,407 +1,2725 @@
-diff --git a/node_modules/react-native-track-player/android/build/generated/source/buildConfig/debug/com/doublesymmetry/trackplayer/BuildConfig.java b/node_modules/react-native-track-player/android/build/generated/source/buildConfig/debug/com/doublesymmetry/trackplayer/BuildConfig.java
-new file mode 100644
-index 0000000..7b5e7c0
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/generated/source/buildConfig/debug/com/doublesymmetry/trackplayer/BuildConfig.java
-@@ -0,0 +1,10 @@
-+/**
-+ * Automatically generated file. DO NOT MODIFY
-+ */
-+package com.doublesymmetry.trackplayer;
+diff --git a/node_modules/react-native-track-player/android/build.gradle b/node_modules/react-native-track-player/android/build.gradle
+index ac33473..0744820 100644
+--- a/node_modules/react-native-track-player/android/build.gradle
++++ b/node_modules/react-native-track-player/android/build.gradle
+@@ -50,9 +50,20 @@ repositories {
+ }
+ 
+ dependencies {
+-    implementation 'com.github.doublesymmetry:kotlinaudio:v2.1.0'
+-    // used when building against local maven
+-//    implementation "com.github.doublesymmetry:kotlin-audio:2.1.0"
++    // KotlinAudio inlined (source copied into this module)
++    // ExoPlayer 2.19.0 (was transitive from KotlinAudio JitPack)
++    api 'com.google.android.exoplayer:exoplayer:2.19.0'
++    api 'com.google.android.exoplayer:extension-mediasession:2.19.0'
 +
-+public final class BuildConfig {
-+  public static final boolean DEBUG = Boolean.parseBoolean("true");
-+  public static final String LIBRARY_PACKAGE_NAME = "com.doublesymmetry.trackplayer";
-+  public static final String BUILD_TYPE = "debug";
++    // Cronet extension for ExoPlayer — Chrome's TLS fingerprint
++    implementation 'com.google.android.exoplayer:extension-cronet:2.19.0'
++    implementation 'com.google.android.gms:play-services-cronet:18.1.0'
++    implementation 'org.chromium.net:cronet-embedded:119.6045.31'
++
++    // KotlinAudio dependencies
++    implementation 'io.coil-kt:coil:2.2.0'
++    implementation 'androidx.media:media:1.6.0'
++    api 'com.jakewharton.timber:timber:5.0.1'
+ 
+     //noinspection GradleDynamicVersion
+     implementation "com.facebook.react:react-native:+"
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/EventHolder.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/EventHolder.kt
+new file mode 100644
+index 0000000..8252e09
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/EventHolder.kt
+@@ -0,0 +1,33 @@
++package com.doublesymmetry.kotlinaudio.event
++
++class EventHolder internal constructor(private val notificationEventHolder: NotificationEventHolder, private val playerEventHolder: PlayerEventHolder) {
++    val audioItemTransition
++        get() = playerEventHolder.audioItemTransition
++
++    val notificationStateChange
++        get() = notificationEventHolder.notificationStateChange
++
++    val onAudioFocusChanged
++        get() = playerEventHolder.onAudioFocusChanged
++
++    val onCommonMetadata
++        get() = playerEventHolder.onCommonMetadata
++
++    val onTimedMetadata
++        get() = playerEventHolder.onTimedMetadata
++
++    val onPlayerActionTriggeredExternally
++        get() = playerEventHolder.onPlayerActionTriggeredExternally
++
++    val playbackEnd
++        get() = playerEventHolder.playbackEnd
++
++    val playWhenReadyChange
++        get() = playerEventHolder.playWhenReadyChange
++
++    val stateChange
++        get() = playerEventHolder.stateChange
++
++    val playbackError
++        get() = playerEventHolder.playbackError
 +}
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml b/node_modules/react-native-track-player/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
-new file mode 100644
-index 0000000..b792434
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/AndroidManifest.xml
-@@ -0,0 +1,25 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-+    package="com.doublesymmetry.trackplayer" >
-+
-+    <uses-sdk android:minSdkVersion="24" />
-+
-+    <uses-permission android:name="android.permission.WAKE_LOCK" />
-+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-+
-+    <application>
-+
-+        <!-- The main service, handles playback, playlists and media buttons -->
-+        <service
-+            android:name="com.doublesymmetry.trackplayer.service.MusicService"
-+            android:enabled="true"
-+            android:exported="true"
-+            android:foregroundServiceType="mediaPlayback" >
-+            <intent-filter>
-+                <action android:name="android.intent.action.MEDIA_BUTTON" />
-+            </intent-filter>
-+        </service>
-+    </application>
-+
-+</manifest>
 \ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json b/node_modules/react-native-track-player/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/NotificationEventHolder.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/NotificationEventHolder.kt
 new file mode 100644
-index 0000000..745a7ed
+index 0000000..5545e2b
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/aapt_friendly_merged_manifests/debug/processDebugManifest/aapt/output-metadata.json
-@@ -0,0 +1,18 @@
-+{
-+  "version": 3,
-+  "artifactType": {
-+    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
-+    "kind": "Directory"
-+  },
-+  "applicationId": "com.doublesymmetry.trackplayer",
-+  "variantName": "debug",
-+  "elements": [
-+    {
-+      "type": "SINGLE",
-+      "filters": [],
-+      "attributes": [],
-+      "outputFile": "AndroidManifest.xml"
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/NotificationEventHolder.kt
+@@ -0,0 +1,20 @@
++package com.doublesymmetry.kotlinaudio.event
++
++import com.doublesymmetry.kotlinaudio.models.NotificationState
++import kotlinx.coroutines.MainScope
++import kotlinx.coroutines.flow.MutableSharedFlow
++import kotlinx.coroutines.flow.asSharedFlow
++import kotlinx.coroutines.launch
++
++class NotificationEventHolder {
++    private val coroutineScope = MainScope()
++
++    private var _notificationStateChange = MutableSharedFlow<NotificationState>(1)
++    var notificationStateChange = _notificationStateChange.asSharedFlow()
++
++    internal fun updateNotificationState(state: NotificationState) {
++        coroutineScope.launch {
++            _notificationStateChange.emit(state)
++        }
 +    }
-+  ],
-+  "elementType": "File"
 +}
 \ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties b/node_modules/react-native-track-player/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/PlayerEventHolder.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/PlayerEventHolder.kt
 new file mode 100644
-index 0000000..1211b1e
+index 0000000..259bde4
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/aar_metadata/debug/writeDebugAarMetadata/aar-metadata.properties
-@@ -0,0 +1,6 @@
-+aarFormatVersion=1.0
-+aarMetadataVersion=1.0
-+minCompileSdk=1
-+minCompileSdkExtension=0
-+minAndroidGradlePluginVersion=1.0.0
-+coreLibraryDesugaringEnabled=false
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json b/node_modules/react-native-track-player/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
-new file mode 100644
-index 0000000..9e26dfe
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/annotation_processor_list/debug/javaPreCompileDebug/annotationProcessors.json
-@@ -0,0 +1 @@
-+{}
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/react-native-track-player/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
-new file mode 100644
-index 0000000..42d3912
-Binary files /dev/null and b/node_modules/react-native-track-player/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/react-native-track-player/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
-new file mode 100644
-index 0000000..80e4515
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
-@@ -0,0 +1,4 @@
-+int drawable forward 0x0
-+int drawable rewind 0x0
-+int string rntp_temporary_channel_id 0x0
-+int string rntp_temporary_channel_name 0x0
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/compiled_local_resources/debug/compileDebugLibraryResources/out/drawable_forward.xml.flat b/node_modules/react-native-track-player/android/build/intermediates/compiled_local_resources/debug/compileDebugLibraryResources/out/drawable_forward.xml.flat
-new file mode 100644
-index 0000000..1bb9200
-Binary files /dev/null and b/node_modules/react-native-track-player/android/build/intermediates/compiled_local_resources/debug/compileDebugLibraryResources/out/drawable_forward.xml.flat differ
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/compiled_local_resources/debug/compileDebugLibraryResources/out/drawable_rewind.xml.flat b/node_modules/react-native-track-player/android/build/intermediates/compiled_local_resources/debug/compileDebugLibraryResources/out/drawable_rewind.xml.flat
-new file mode 100644
-index 0000000..bcc19b6
-Binary files /dev/null and b/node_modules/react-native-track-player/android/build/intermediates/compiled_local_resources/debug/compileDebugLibraryResources/out/drawable_rewind.xml.flat differ
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
-new file mode 100644
-index 0000000..7ab665f
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
-@@ -0,0 +1,3 @@
-+#Tue Feb 24 19:07:25 CET 2026
-+com.doublesymmetry.trackplayer.react-native-track-player-main-6\:/drawable/forward.xml=C\:\\Users\\Admin\\Desktop\\proyectos\\music_player\\sonicflow\\node_modules\\react-native-track-player\\android\\build\\intermediates\\packaged_res\\debug\\packageDebugResources\\drawable\\forward.xml
-+com.doublesymmetry.trackplayer.react-native-track-player-main-6\:/drawable/rewind.xml=C\:\\Users\\Admin\\Desktop\\proyectos\\music_player\\sonicflow\\node_modules\\react-native-track-player\\android\\build\\intermediates\\packaged_res\\debug\\packageDebugResources\\drawable\\rewind.xml
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml b/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml
-new file mode 100644
-index 0000000..80a694d
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml
-@@ -0,0 +1,5 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<resources>
-+    <string name="rntp_temporary_channel_id">rntp_temporary_channel</string>
-+    <string name="rntp_temporary_channel_name">temporary_channel</string>
-+</resources>
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
-new file mode 100644
-index 0000000..e238f00
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
-@@ -0,0 +1,2 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\res"><file name="forward" path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\res\drawable\forward.xml" qualifiers="" type="drawable"/><file name="rewind" path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\res\drawable\rewind.xml" qualifiers="" type="drawable"/><file path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\res\values\strings.xml" qualifiers=""><string name="rntp_temporary_channel_id">rntp_temporary_channel</string><string name="rntp_temporary_channel_name">temporary_channel</string></file></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\build\generated\res\resValues\debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\build\generated\res\resValues\debug"/></dataSet><mergedItems/></merger>
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugAssets/merger.xml b/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
-new file mode 100644
-index 0000000..996c591
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugAssets/merger.xml
-@@ -0,0 +1,2 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\assets"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\debug\assets"/></dataSet><dataSet config="generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\build\intermediates\shader_assets\debug\compileDebugShaders\out"/></dataSet></merger>
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml b/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
-new file mode 100644
-index 0000000..f282b9c
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugJniLibFolders/merger.xml
-@@ -0,0 +1,2 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\jniLibs"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\debug\jniLibs"/></dataSet></merger>
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugShaders/merger.xml b/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
-new file mode 100644
-index 0000000..c6cd9ae
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/incremental/mergeDebugShaders/merger.xml
-@@ -0,0 +1,2 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<merger version="3"><dataSet config="main" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\shaders"/></dataSet><dataSet config="debug" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\debug\shaders"/></dataSet></merger>
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/react-native-track-player/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
-new file mode 100644
-index 0000000..3655221
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
-@@ -0,0 +1,6 @@
-+R_DEF: Internal format may change without notice
-+local
-+drawable forward
-+drawable rewind
-+string rntp_temporary_channel_id
-+string rntp_temporary_channel_name
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt b/node_modules/react-native-track-player/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
-new file mode 100644
-index 0000000..f780996
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/manifest_merge_blame_file/debug/processDebugManifest/manifest-merger-blame-debug-report.txt
-@@ -0,0 +1,40 @@
-+1<?xml version="1.0" encoding="utf-8"?>
-+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-+3    package="com.doublesymmetry.trackplayer" >
-+4
-+5    <uses-sdk android:minSdkVersion="24" />
-+6
-+7    <uses-permission android:name="android.permission.WAKE_LOCK" />
-+7-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:5:5-68
-+7-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:5:22-65
-+8    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-+8-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:6:5-77
-+8-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:6:22-74
-+9    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-+9-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:8:5-9:79
-+9-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:9:9-76
-+10
-+11    <application>
-+11-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:11:5-19:19
-+12
-+13        <!-- The main service, handles playback, playlists and media buttons -->
-+14        <service
-+14-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:9-18:19
-+15            android:name="com.doublesymmetry.trackplayer.service.MusicService"
-+15-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:18-84
-+16            android:enabled="true"
-+16-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:85-107
-+17            android:exported="true"
-+17-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:108-131
-+18            android:foregroundServiceType="mediaPlayback" >
-+18-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:132-177
-+19            <intent-filter>
-+19-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:15:13-17:29
-+20                <action android:name="android.intent.action.MEDIA_BUTTON" />
-+20-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:16:17-77
-+20-->C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:16:25-74
-+21            </intent-filter>
-+22        </service>
-+23    </application>
-+24
-+25</manifest>
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml b/node_modules/react-native-track-player/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
-new file mode 100644
-index 0000000..b792434
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml
-@@ -0,0 +1,25 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-+    package="com.doublesymmetry.trackplayer" >
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/event/PlayerEventHolder.kt
+@@ -0,0 +1,123 @@
++package com.doublesymmetry.kotlinaudio.event
 +
-+    <uses-sdk android:minSdkVersion="24" />
++import com.doublesymmetry.kotlinaudio.models.*
++import com.google.android.exoplayer2.MediaMetadata
++import com.google.android.exoplayer2.metadata.Metadata
++import kotlinx.coroutines.MainScope
++import kotlinx.coroutines.flow.MutableSharedFlow
++import kotlinx.coroutines.flow.MutableStateFlow
++import kotlinx.coroutines.flow.asSharedFlow
++import kotlinx.coroutines.flow.asStateFlow
++import kotlinx.coroutines.launch
 +
-+    <uses-permission android:name="android.permission.WAKE_LOCK" />
-+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
++class PlayerEventHolder {
++    private val coroutineScope = MainScope()
 +
-+    <application>
++    private var _stateChange = MutableSharedFlow<AudioPlayerState>(1)
++    var stateChange = _stateChange.asSharedFlow()
 +
-+        <!-- The main service, handles playback, playlists and media buttons -->
-+        <service
-+            android:name="com.doublesymmetry.trackplayer.service.MusicService"
-+            android:enabled="true"
-+            android:exported="true"
-+            android:foregroundServiceType="mediaPlayback" >
-+            <intent-filter>
-+                <action android:name="android.intent.action.MEDIA_BUTTON" />
-+            </intent-filter>
-+        </service>
-+    </application>
++    private var _playbackEnd = MutableSharedFlow<PlaybackEndedReason?>(1)
++    var playbackEnd = _playbackEnd.asSharedFlow()
 +
-+</manifest>
++    private var _playbackError = MutableSharedFlow<PlaybackError>(1)
++    var playbackError = _playbackError.asSharedFlow()
++
++    private var _playWhenReadyChange = MutableSharedFlow<PlayWhenReadyChangeData>(1)
++    /**
++     * Use these events to track when [com.doublesymmetry.kotlinaudio.players.BaseAudioPlayer.playWhenReady]
++     * changes.
++     */
++    var playWhenReadyChange = _playWhenReadyChange.asSharedFlow()
++
++    private var _audioItemTransition = MutableSharedFlow<AudioItemTransitionReason?>(1)
++
++    /**
++     * Use these events to track when and why an [AudioItem] transitions to another.
++     *
++     * Examples of an audio transition include changes to [AudioItem] queue, an [AudioItem] on repeat, skipping an [AudioItem], or simply when the [AudioItem] has finished.
++     */
++    var audioItemTransition = _audioItemTransition.asSharedFlow()
++
++    private var _positionChanged = MutableSharedFlow<PositionChangedReason?>(1)
++    var positionChanged = _positionChanged.asSharedFlow()
++
++    private var _onAudioFocusChanged = MutableSharedFlow<FocusChangeData>(1)
++    var onAudioFocusChanged = _onAudioFocusChanged.asSharedFlow()
++
++    private var _onCommonMetadata = MutableSharedFlow<MediaMetadata>(1)
++    var onCommonMetadata = _onCommonMetadata.asSharedFlow()
++
++    private var _onTimedMetadata = MutableSharedFlow<Metadata>(1)
++    var onTimedMetadata = _onTimedMetadata.asSharedFlow()
++
++    private var _onPlayerActionTriggeredExternally = MutableSharedFlow<MediaSessionCallback>()
++
++    /**
++     * Use these events to track whenever a player action has been triggered from an outside source.
++     *
++     * The sources can be: media buttons on headphones, Android Wear, Android Auto, Google Assistant, media notification, etc.
++     *
++     * For this observable to send events, set [interceptPlayerActionsTriggeredExternally][com.doublesymmetry.kotlinaudio.models.PlayerConfig.interceptPlayerActionsTriggeredExternally] to true.
++    */
++    var onPlayerActionTriggeredExternally = _onPlayerActionTriggeredExternally.asSharedFlow()
++
++    internal fun updateAudioPlayerState(state: AudioPlayerState) {
++        coroutineScope.launch {
++            _stateChange.emit(state)
++        }
++    }
++
++    internal fun updatePlaybackEndedReason(reason: PlaybackEndedReason) {
++        coroutineScope.launch {
++            _playbackEnd.emit(reason)
++        }
++    }
++
++    internal fun updatePlayWhenReadyChange(playWhenReadyChange: PlayWhenReadyChangeData) {
++        coroutineScope.launch {
++            _playWhenReadyChange.emit(playWhenReadyChange)
++        }
++    }
++
++    internal fun updateAudioItemTransition(reason: AudioItemTransitionReason) {
++        coroutineScope.launch {
++            _audioItemTransition.emit(reason)
++        }
++    }
++
++    internal fun updatePositionChangedReason(reason: PositionChangedReason) {
++        coroutineScope.launch {
++            _positionChanged.emit(reason)
++        }
++    }
++
++    internal fun updateOnAudioFocusChanged(isPaused: Boolean, isPermanent: Boolean) {
++        coroutineScope.launch {
++            _onAudioFocusChanged.emit(FocusChangeData(isPaused, isPermanent))
++        }
++    }
++
++    internal fun updateOnCommonMetadata(metadata: MediaMetadata) {
++        coroutineScope.launch {
++            _onCommonMetadata.emit(metadata)
++        }
++    }
++
++    internal fun updateOnTimedMetadata(metadata: Metadata) {
++        coroutineScope.launch {
++            _onTimedMetadata.emit(metadata)
++        }
++    }
++
++    internal fun updatePlaybackError(error: PlaybackError) {
++        coroutineScope.launch {
++            _playbackError.emit(error)
++        }
++    }
++
++    internal fun updateOnPlayerActionTriggeredExternally(callback: MediaSessionCallback) {
++        coroutineScope.launch {
++            _onPlayerActionTriggeredExternally.emit(callback)
++        }
++    }
++}
 \ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json b/node_modules/react-native-track-player/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioContentType.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioContentType.kt
 new file mode 100644
-index 0000000..0637a08
+index 0000000..68b8310
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/navigation_json/debug/extractDeepLinksDebug/navigation.json
-@@ -0,0 +1 @@
-+[]
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt b/node_modules/react-native-track-player/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioContentType.kt
+@@ -0,0 +1,10 @@
++package com.doublesymmetry.kotlinaudio.models
++
++enum class AudioContentType {
++    MUSIC,
++    SPEECH,
++    SONIFICATION,
++    MOVIE,
++    UNKNOWN
++}
++
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioItem.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioItem.kt
 new file mode 100644
-index 0000000..08f4ebe
+index 0000000..badf6eb
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/nested_resources_validation_report/debug/generateDebugResources/nestedResourcesValidationReport.txt
-@@ -0,0 +1 @@
-+0 Warning/Error
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/forward.xml b/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/forward.xml
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioItem.kt
+@@ -0,0 +1,64 @@
++package com.doublesymmetry.kotlinaudio.models
++
++import android.graphics.Bitmap
++
++interface AudioItem {
++    var audioUrl: String
++    val type: MediaType
++    var artist: String?
++    var title: String?
++    var albumTitle: String?
++    val artwork: String?
++    val duration: Long?
++    val options: AudioItemOptions?
++}
++
++data class AudioItemOptions(
++    val headers: MutableMap<String, String>? = null,
++    val userAgent: String? = null,
++    val resourceId: Int? = null
++)
++
++enum class MediaType(val value: String) {
++    /**
++     * The default media type. Should be used for streams over HTTP or files
++     */
++    DEFAULT("default"),
++
++    /**
++     * The DASH media type for adaptive streams. Should be used with DASH manifests.
++     */
++    DASH("dash"),
++
++    /**
++     * The HLS media type for adaptive streams. Should be used with HLS playlists.
++     */
++    HLS("hls"),
++
++    /**
++     * The SmoothStreaming media type for adaptive streams. Should be used with SmoothStreaming manifests.
++     */
++    SMOOTH_STREAMING("smoothstreaming");
++}
++
++data class DefaultAudioItem(
++    override var audioUrl: String,
++
++    /**
++     * Set to [MediaType.DEFAULT] by default.
++     */
++    override val type: MediaType = MediaType.DEFAULT,
++
++    override var artist: String? = null,
++    override var title: String? = null,
++    override var albumTitle: String? = null,
++    override var artwork: String? = null,
++    override val duration: Long? = null,
++    override val options: AudioItemOptions? = null,
++) : AudioItem
++
++class AudioItemHolder(
++    var audioItem: AudioItem
++) {
++    var artworkBitmap: Bitmap? = null
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioItemTransitionReason.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioItemTransitionReason.kt
 new file mode 100644
-index 0000000..32e3663
+index 0000000..bf6b24c
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/forward.xml
-@@ -0,0 +1,5 @@
-+<vector android:autoMirrored="true" android:height="24dp"
-+    android:tint="#FFFFFF" android:viewportHeight="24"
-+    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
-+    <path android:fillColor="@android:color/white" android:pathData="M18,13c0,3.31 -2.69,6 -6,6s-6,-2.69 -6,-6s2.69,-6 6,-6v4l5,-5l-5,-5v4c-4.42,0 -8,3.58 -8,8c0,4.42 3.58,8 8,8c4.42,0 8,-3.58 8,-8H18z"/>
-+    </vector>
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/rewind.xml b/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/rewind.xml
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioItemTransitionReason.kt
+@@ -0,0 +1,33 @@
++package com.doublesymmetry.kotlinaudio.models
++
++/**
++ * Use these events to track when and why an [AudioItem] transitions to another.
++ * Examples of an audio transition include changes to [AudioItem] queue, an [AudioItem] on repeat, skipping an [AudioItem], or simply when the [AudioItem] has finished.
++ */
++sealed class AudioItemTransitionReason(val oldPosition: Long) {
++    /**
++     * Playback has automatically transitioned to the next [AudioItem].
++     *
++     * This reason also indicates a transition caused by another player.
++     */
++    class AUTO(oldPosition: Long) : AudioItemTransitionReason(oldPosition)
++
++    /**
++     * A seek to another [AudioItem] has occurred. Usually triggered when calling
++     * [QueuedAudioPlayer.next][com.doublesymmetry.kotlinaudio.players.QueuedAudioPlayer.next]
++     * or [QueuedAudioPlayer.previous][com.doublesymmetry.kotlinaudio.players.QueuedAudioPlayer.previous].
++     */
++    class SEEK_TO_ANOTHER_AUDIO_ITEM(oldPosition: Long) : AudioItemTransitionReason(oldPosition)
++
++    /**
++     * The [AudioItem] has been repeated.
++     */
++    class REPEAT(oldPosition: Long) : AudioItemTransitionReason(oldPosition)
++
++    /**
++     * The current [AudioItem] has changed because of a change in the queue. This can either be if
++     * the [AudioItem] previously being played has been removed, or when the queue becomes non-empty
++     * after being empty.
++     */
++    class QUEUE_CHANGED(oldPosition: Long) : AudioItemTransitionReason(oldPosition)
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioPlayerState.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioPlayerState.kt
 new file mode 100644
-index 0000000..99c06c4
+index 0000000..da9ca13
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/drawable/rewind.xml
-@@ -0,0 +1,5 @@
-+<vector android:autoMirrored="true" android:height="24dp"
-+    android:tint="#FFFFFF" android:viewportHeight="24"
-+    android:viewportWidth="24" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
-+    <path android:fillColor="@android:color/white" android:pathData="M12,5V1L7,6l5,5V7c3.31,0 6,2.69 6,6s-2.69,6 -6,6 -6,-2.69 -6,-6H4c0,4.42 3.58,8 8,8s8,-3.58 8,-8 -3.58,-8 -8,-8z"/>
-+</vector>
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/values/values.xml b/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/values/values.xml
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/AudioPlayerState.kt
+@@ -0,0 +1,30 @@
++package com.doublesymmetry.kotlinaudio.models
++
++enum class AudioPlayerState {
++    /** The current [AudioItem] is being loaded for playback. */
++    LOADING,
++
++    /** The current [AudioItem] is loaded, and the player is ready to start playing. */
++    READY,
++
++    /** The current [AudioItem] is currently buffering. */
++    BUFFERING,
++
++    /** The player is paused. */
++    PAUSED,
++
++    /** The player is stopped. */
++    STOPPED,
++
++    /** The player is playing. */
++    PLAYING,
++
++    /** No [AudioItem] is loaded and the player is doing nothing. */
++    IDLE,
++
++    /** Playback stopped due to the end of the queue being reached. */
++    ENDED,
++
++    /** The player stopped playing due to an error. */
++    ERROR
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/BufferConfig.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/BufferConfig.kt
 new file mode 100644
-index 0000000..80a694d
+index 0000000..36a150d
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/packaged_res/debug/packageDebugResources/values/values.xml
-@@ -0,0 +1,5 @@
-+<?xml version="1.0" encoding="utf-8"?>
-+<resources>
-+    <string name="rntp_temporary_channel_id">rntp_temporary_channel</string>
-+    <string name="rntp_temporary_channel_name">temporary_channel</string>
-+</resources>
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/react-native-track-player/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/BufferConfig.kt
+@@ -0,0 +1,8 @@
++package com.doublesymmetry.kotlinaudio.models
++
++data class BufferConfig(
++    val minBuffer: Int?,
++    val maxBuffer: Int?,
++    val playBuffer: Int?,
++    val backBuffer: Int?,
++)
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/CacheConfig.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/CacheConfig.kt
 new file mode 100644
-index 0000000..d16dca5
+index 0000000..4fde481
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
-@@ -0,0 +1,5 @@
-+com.doublesymmetry.trackplayer
-+drawable forward
-+drawable rewind
-+string rntp_temporary_channel_id
-+string rntp_temporary_channel_name
-diff --git a/node_modules/react-native-track-player/android/build/kotlin/compileDebugKotlin/cacheable/dirty-sources.txt b/node_modules/react-native-track-player/android/build/kotlin/compileDebugKotlin/cacheable/dirty-sources.txt
-new file mode 100644
-index 0000000..f0922c8
---- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/kotlin/compileDebugKotlin/cacheable/dirty-sources.txt
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/CacheConfig.kt
 @@ -0,0 +1,17 @@
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\utils\AppForegroundTracker.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\MetadataAdapter.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\TrackAudioItem.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\State.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\TrackPlayer.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\Track.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\TrackMetadata.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\utils\RejectionException.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\utils\BundleUtils.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\PlaybackMetadata.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\model\NowPlayingMetadata.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\module\MusicEvents.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\service\MusicService.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\extensions\NumberExt.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\module\MusicModule.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\extensions\EnumExtensions.kt
-+C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\java\com\doublesymmetry\trackplayer\extensions\AudioPlayerStateExt.kt
-\ No newline at end of file
-diff --git a/node_modules/react-native-track-player/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin b/node_modules/react-native-track-player/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin
++package com.doublesymmetry.kotlinaudio.models
++
++/**
++ * Configuration for cache properties of player.
++ */
++data class CacheConfig(
++    /**
++     * Maximum player cache size in kilobytes.
++     */
++    val maxCacheSize: Long?,
++
++    /**
++     * Cache identifier, used to make cache directory.
++     */
++    val identifier: String = "TrackPlayer"
++)
++
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/Capability.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/Capability.kt
 new file mode 100644
-index 0000000..763c5ee
-Binary files /dev/null and b/node_modules/react-native-track-player/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin differ
-diff --git a/node_modules/react-native-track-player/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/react-native-track-player/android/build/outputs/logs/manifest-merger-debug-report.txt
-new file mode 100644
-index 0000000..20f7def
+index 0000000..2f99caa
 --- /dev/null
-+++ b/node_modules/react-native-track-player/android/build/outputs/logs/manifest-merger-debug-report.txt
-@@ -0,0 +1,47 @@
-+-- Merging decision tree log ---
-+manifest
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:2:1-21:12
-+INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:2:1-21:12
-+	package
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:3:11-51
-+		INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml
-+	xmlns:android
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:2:11-69
-+uses-permission#android.permission.WAKE_LOCK
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:5:5-68
-+	android:name
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:5:22-65
-+uses-permission#android.permission.FOREGROUND_SERVICE
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:6:5-77
-+	android:name
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:6:22-74
-+uses-permission#android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:8:5-9:79
-+	android:name
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:9:9-76
-+application
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:11:5-19:19
-+service#com.doublesymmetry.trackplayer.service.MusicService
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:9-18:19
-+	android:enabled
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:85-107
-+	android:exported
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:108-131
-+	android:foregroundServiceType
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:132-177
-+	android:name
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:14:18-84
-+intent-filter#action:name:android.intent.action.MEDIA_BUTTON
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:15:13-17:29
-+action#android.intent.action.MEDIA_BUTTON
-+ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:16:17-77
-+	android:name
-+		ADDED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml:16:25-74
-+uses-sdk
-+INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml reason: use-sdk injection requested
-+INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml
-+INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml
-+	android:targetSdkVersion
-+		INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml
-+	android:minSdkVersion
-+		INJECTED from C:\Users\Admin\Desktop\proyectos\music_player\sonicflow\node_modules\react-native-track-player\android\src\main\AndroidManifest.xml
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/Capability.kt
+@@ -0,0 +1,19 @@
++package com.doublesymmetry.kotlinaudio.models
++
++enum class Capability {
++    PLAY,
++    PLAY_FROM_ID,
++    PLAY_FROM_SEARCH,
++    PAUSE,
++    STOP,
++    SEEK_TO,
++    SKIP,
++    SKIP_TO_NEXT,
++    SKIP_TO_PREVIOUS,
++    JUMP_FORWARD,
++    JUMP_BACKWARD,
++    SET_RATING,
++    LIKE,
++    DISLIKE,
++    BOOKMARK
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/FocusChangeData.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/FocusChangeData.kt
+new file mode 100644
+index 0000000..3df1dbe
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/FocusChangeData.kt
+@@ -0,0 +1,3 @@
++package com.doublesymmetry.kotlinaudio.models
++
++data class FocusChangeData(val isPaused: Boolean, val isFocusLostPermanently: Boolean)
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/MediaSessionCallback.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/MediaSessionCallback.kt
+new file mode 100644
+index 0000000..415cbcf
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/MediaSessionCallback.kt
+@@ -0,0 +1,16 @@
++package com.doublesymmetry.kotlinaudio.models
++
++import android.os.Bundle
++import android.support.v4.media.RatingCompat
++
++sealed class MediaSessionCallback {
++    class RATING(val rating: RatingCompat, extras: Bundle?): MediaSessionCallback()
++    object PLAY : MediaSessionCallback()
++    object PAUSE : MediaSessionCallback()
++    object NEXT : MediaSessionCallback()
++    object PREVIOUS : MediaSessionCallback()
++    object FORWARD : MediaSessionCallback()
++    object REWIND : MediaSessionCallback()
++    object STOP : MediaSessionCallback()
++    class SEEK(val positionMs: Long): MediaSessionCallback()
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/NotificationConfig.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/NotificationConfig.kt
+new file mode 100644
+index 0000000..28563de
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/NotificationConfig.kt
+@@ -0,0 +1,42 @@
++package com.doublesymmetry.kotlinaudio.models
++
++import android.app.PendingIntent
++import androidx.annotation.DrawableRes
++
++/**
++ * Used to configure the player notification.
++ * @param buttons Provide customized notification buttons. They will be shown by default. Note that buttons can still be shown and hidden at runtime by using the functions in [NotificationManager][com.doublesymmetry.kotlinaudio.notification.NotificationManager], but they will have the default icon if not set explicitly here.
++ * @param accentColor The accent color of the notification.
++ * @param smallIcon The small icon of the notification which is also shown in the system status bar.
++ * @param pendingIntent The [PendingIntent] that would be called when tapping on the notification itself.
++ */
++data class NotificationConfig(
++    val buttons: List<NotificationButton>,
++    val accentColor: Int? = null,
++    @DrawableRes val smallIcon: Int? = null,
++    val pendingIntent: PendingIntent? = null
++)
++
++/**
++ * Provide customized notification buttons. They will be shown by default. Note that buttons can still be shown and hidden at runtime by using the functions in [NotificationManager][com.doublesymmetry.kotlinaudio.notification.NotificationManager], but they will have the default icon if not set explicitly here.
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showPlayPauseButton]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showStopButton]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showRewindButton]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showRewindButtonCompact]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showForwardButton]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showForwardButtonCompact]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showNextButton]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showNextButtonCompact]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showPreviousButton]
++ * @see [com.doublesymmetry.kotlinaudio.notification.NotificationManager.showPreviousButtonCompact]
++ */
++@Suppress("ClassName")
++sealed class NotificationButton {
++    class PLAY_PAUSE(@DrawableRes val playIcon: Int? = null, @DrawableRes val pauseIcon: Int? = null): NotificationButton()
++    class STOP(@DrawableRes val icon: Int? = null): NotificationButton()
++    class FORWARD(@DrawableRes val icon: Int? = null, val isCompact: Boolean = false): NotificationButton()
++    class BACKWARD(@DrawableRes val icon: Int? = null, val isCompact: Boolean = false): NotificationButton()
++    class NEXT(@DrawableRes val icon: Int? = null, val isCompact: Boolean = false): NotificationButton()
++    class PREVIOUS(@DrawableRes val icon: Int? = null, val isCompact: Boolean = false): NotificationButton()
++    object SEEK_TO : NotificationButton()
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/NotificationState.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/NotificationState.kt
+new file mode 100644
+index 0000000..73c15f1
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/NotificationState.kt
+@@ -0,0 +1,8 @@
++package com.doublesymmetry.kotlinaudio.models
++
++import android.app.Notification
++
++sealed class NotificationState {
++    class POSTED(val notificationId: Int, val notification: Notification, val ongoing: Boolean) : NotificationState()
++    class CANCELLED(val notificationId: Int): NotificationState()
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayWhenReadyChangeData.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayWhenReadyChangeData.kt
+new file mode 100644
+index 0000000..b142b24
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayWhenReadyChangeData.kt
+@@ -0,0 +1,5 @@
++package com.doublesymmetry.kotlinaudio.models
++
++import com.google.android.exoplayer2.Player
++
++data class PlayWhenReadyChangeData(val playWhenReady: Boolean, val pausedBecauseReachedEnd: Boolean)
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlaybackEndedReason.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlaybackEndedReason.kt
+new file mode 100644
+index 0000000..9ab62cf
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlaybackEndedReason.kt
+@@ -0,0 +1,5 @@
++package com.doublesymmetry.kotlinaudio.models
++
++enum class PlaybackEndedReason {
++    PLAYED_UNTIL_END, PLAYER_STOPPED, SKIPPED_TO_NEXT, SKIPPED_TO_PREVIOUS, JUMPED_TO_INDEX
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlaybackError.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlaybackError.kt
+new file mode 100644
+index 0000000..7a736a6
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlaybackError.kt
+@@ -0,0 +1,6 @@
++package com.doublesymmetry.kotlinaudio.models
++
++data class PlaybackError (
++    val code: String? = null,
++    val message: String? = null
++)
+\ No newline at end of file
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayerConfig.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayerConfig.kt
+new file mode 100644
+index 0000000..74cb654
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayerConfig.kt
+@@ -0,0 +1,36 @@
++package com.doublesymmetry.kotlinaudio.models
++
++data class PlayerConfig(
++    /**
++     * Toggle whether or not a player action triggered from an outside source should be intercepted.
++     *
++     * The sources can be: media buttons on headphones, Android Wear, Android Auto, Google Assistant, media notification, etc.
++     *
++     * Setting this to true enables the use of [onPlayerActionTriggeredExternally][com.doublesymmetry.kotlinaudio.event.PlayerEventHolder.onPlayerActionTriggeredExternally] events.
++     *
++     * **Example**:
++     * ```
++     *  val player = QueuedAudioPlayer(requireActivity(), playerConfig = PlayerConfig(interceptPlayerActionsTriggeredExternally = true))
++     * ```
++     */
++    var interceptPlayerActionsTriggeredExternally: Boolean = false,
++
++    /**
++     * Toggle whether the player should pause automatically when audio is rerouted from a headset to device speakers.
++     */
++    val handleAudioBecomingNoisy: Boolean = false,
++
++    /**
++     * Whether audio focus should be managed automatically. See https://medium.com/google-exoplayer/easy-audio-focus-with-exoplayer-a2dcbbe4640e
++     */
++    val handleAudioFocus: Boolean = false,
++    /**
++     * The audio content type.
++     */
++    val audioContentType: AudioContentType = AudioContentType.MUSIC,
++
++    /**
++     * The audio usage.
++     */
++    val wakeMode: WakeMode = WakeMode.NONE,
++)
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayerOptions.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayerOptions.kt
+new file mode 100644
+index 0000000..0617c46
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PlayerOptions.kt
+@@ -0,0 +1,9 @@
++package com.doublesymmetry.kotlinaudio.models
++
++interface PlayerOptions {
++    var alwaysPauseOnInterruption: Boolean
++}
++
++internal data class DefaultPlayerOptions(
++    override var alwaysPauseOnInterruption: Boolean = false,
++) : PlayerOptions
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PositionChangedReason.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PositionChangedReason.kt
+new file mode 100644
+index 0000000..7b8cc64
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/PositionChangedReason.kt
+@@ -0,0 +1,39 @@
++package com.doublesymmetry.kotlinaudio.models
++
++/**
++ * Use these events to track when and why the positionMs of an [AudioItem] changes.
++ * Examples include changes to [AudioItem] queue, seeking, skipping, etc.
++ */
++sealed class PositionChangedReason(val oldPosition: Long, val newPosition: Long) {
++    /**
++     * Position has changed because the player has automatically transitioned to the next [AudioItem].
++     *
++     * @see [AudioItemTransitionReason]
++     */
++    class AUTO(oldPosition: Long, newPosition: Long) : PositionChangedReason(oldPosition, newPosition)
++
++    /**
++     * Position has changed because of a queue update.
++     */
++    class QUEUE_CHANGED(oldPosition: Long, newPosition: Long) : PositionChangedReason(oldPosition, newPosition)
++
++    /**
++     * Position has changed because a seek has occurred within the current [AudioItem], or another one.
++     */
++    class SEEK(oldPosition: Long, newPosition: Long) : PositionChangedReason(oldPosition, newPosition)
++
++    /**
++     * Position has changed because an attempted seek has failed. This can occur if we tried to see to an invalid positionMs.
++     */
++    class SEEK_FAILED(oldPosition: Long, newPosition: Long) : PositionChangedReason(oldPosition, newPosition)
++
++    /**
++     * Position has changed because a period (example: an ad) has been skipped.
++     */
++    class SKIPPED_PERIOD(oldPosition: Long, newPosition: Long) : PositionChangedReason(oldPosition, newPosition)
++
++    /**
++     * Position has changed for an unknown reason.
++     */
++    class UNKNOWN(oldPosition: Long, newPosition: Long) : PositionChangedReason(oldPosition, newPosition)
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/QueuedPlayerOptions.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/QueuedPlayerOptions.kt
+new file mode 100644
+index 0000000..9028ac6
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/QueuedPlayerOptions.kt
+@@ -0,0 +1,49 @@
++package com.doublesymmetry.kotlinaudio.models
++
++import com.google.android.exoplayer2.ExoPlayer
++import com.google.android.exoplayer2.Player
++
++interface QueuedPlayerOptions : PlayerOptions {
++    override var alwaysPauseOnInterruption: Boolean
++    var repeatMode: RepeatMode
++}
++
++class DefaultQueuedPlayerOptions(
++    private val exoPlayer: ExoPlayer,
++    override var alwaysPauseOnInterruption: Boolean = false,
++) : QueuedPlayerOptions {
++    // Functions in data classes might or might not be a bit of a code smell.
++    // I'm using the passed exoPlayer which breaks separation of concerns. But it's also useful.
++    // More here: https://www.reddit.com/r/Kotlin/comments/ehqe4e/why_is_it_bad_practice_to_have_functions_in_data/
++    // TODO: Figure out a way for this function to be outside of this data class
++    override var repeatMode: RepeatMode
++        get() {
++            return when (exoPlayer.repeatMode) {
++                Player.REPEAT_MODE_ALL -> RepeatMode.ALL
++                Player.REPEAT_MODE_ONE -> RepeatMode.ONE
++                else -> RepeatMode.OFF
++            }
++        }
++        set(value) {
++            when (value) {
++                RepeatMode.ALL -> exoPlayer.repeatMode = Player.REPEAT_MODE_ALL
++                RepeatMode.ONE -> exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
++                RepeatMode.OFF -> exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
++            }
++        }
++}
++
++enum class RepeatMode {
++    OFF, ONE, ALL;
++
++    companion object {
++        fun fromOrdinal(ordinal: Int): RepeatMode {
++            return when (ordinal) {
++                0 -> OFF
++                1 -> ONE
++                2 -> ALL
++                else -> error("Wrong ordinal")
++            }
++        }
++    }
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/WakeMode.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/WakeMode.kt
+new file mode 100644
+index 0000000..dd42361
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/models/WakeMode.kt
+@@ -0,0 +1,7 @@
++package com.doublesymmetry.kotlinaudio.models
++
++enum class WakeMode {
++    NONE,
++    LOCAL,
++    NETWORK,
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/notification/NotificationManager.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/notification/NotificationManager.kt
+new file mode 100644
+index 0000000..5bc7ca4
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/notification/NotificationManager.kt
+@@ -0,0 +1,811 @@
++package com.doublesymmetry.kotlinaudio.notification
++
++import android.app.Notification
++import android.app.PendingIntent
++import android.content.Context
++import android.content.Intent
++import android.graphics.Bitmap
++import android.graphics.BitmapFactory
++import android.graphics.Color
++import android.graphics.drawable.BitmapDrawable
++import android.os.Build
++import android.os.Bundle
++import android.support.v4.media.MediaDescriptionCompat
++import android.support.v4.media.MediaMetadataCompat
++import android.support.v4.media.RatingCompat
++import android.support.v4.media.session.MediaSessionCompat
++import android.support.v4.media.session.PlaybackStateCompat
++import androidx.annotation.DrawableRes
++import androidx.core.app.NotificationCompat
++import coil.imageLoader
++import coil.request.Disposable
++import coil.request.ImageRequest
++import com.doublesymmetry.trackplayer.R
++import com.doublesymmetry.kotlinaudio.event.NotificationEventHolder
++import com.doublesymmetry.kotlinaudio.event.PlayerEventHolder
++import com.doublesymmetry.kotlinaudio.models.AudioItem
++import com.doublesymmetry.kotlinaudio.models.MediaSessionCallback
++import com.doublesymmetry.kotlinaudio.models.NotificationButton
++import com.doublesymmetry.kotlinaudio.models.NotificationConfig
++import com.doublesymmetry.kotlinaudio.models.NotificationState
++import com.doublesymmetry.kotlinaudio.players.components.getAudioItemHolder
++import com.google.android.exoplayer2.C
++import com.google.android.exoplayer2.Player
++import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
++import com.google.android.exoplayer2.ext.mediasession.TimelineQueueNavigator
++import com.google.android.exoplayer2.ui.PlayerNotificationManager
++import com.google.android.exoplayer2.ui.PlayerNotificationManager.CustomActionReceiver
++import kotlinx.coroutines.MainScope
++import kotlinx.coroutines.delay
++import kotlinx.coroutines.launch
++import okhttp3.Headers
++import okhttp3.Headers.Companion.toHeaders
++
++class NotificationManager internal constructor(
++    private val context: Context,
++    private val player: Player,
++    private val mediaSession: MediaSessionCompat,
++    private val mediaSessionConnector: MediaSessionConnector,
++    val event: NotificationEventHolder,
++    val playerEventHolder: PlayerEventHolder
++) : PlayerNotificationManager.NotificationListener {
++    private var pendingIntent: PendingIntent? = null
++    private val descriptionAdapter = object : PlayerNotificationManager.MediaDescriptionAdapter {
++        override fun getCurrentContentTitle(player: Player): CharSequence {
++            return getTitle() ?: ""
++        }
++
++        override fun createCurrentContentIntent(player: Player): PendingIntent? {
++            return pendingIntent
++        }
++
++        override fun getCurrentContentText(player: Player): CharSequence? {
++            return getArtist() ?: ""
++        }
++
++        override fun getCurrentSubText(player: Player): CharSequence? {
++            return player.mediaMetadata.displayTitle
++        }
++
++        override fun getCurrentLargeIcon(
++            player: Player,
++            callback: PlayerNotificationManager.BitmapCallback,
++        ): Bitmap? {
++            val bitmap = getCachedArtworkBitmap()
++            if (bitmap != null) {
++                return bitmap
++            }
++            val artwork = getMediaItemArtworkUrl()
++            val headers = getNetworkHeaders()
++            val holder = player.currentMediaItem?.getAudioItemHolder()
++            if (artwork != null && holder?.artworkBitmap == null) {
++                context.imageLoader.enqueue(
++                    ImageRequest.Builder(context)
++                        .data(artwork)
++                        .headers(headers)
++                        .target { result ->
++                            val resultBitmap = (result as BitmapDrawable).bitmap
++                            holder?.artworkBitmap = resultBitmap
++                            invalidate()
++                        }
++                        .build()
++                )
++            }
++            return iconPlaceholder
++        }
++    }
++
++    private var internalNotificationManager: PlayerNotificationManager? = null
++    private val scope = MainScope()
++    private val buttons = mutableSetOf<NotificationButton?>()
++    private var invalidateThrottleCount = 0
++    private var iconPlaceholder = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
++
++    private var notificationMetadataBitmap: Bitmap? = null
++    private var notificationMetadataArtworkDisposable: Disposable? = null
++
++    /**
++     * The item that should be used for the notification
++     * This is used when the user manually sets the notification item
++     *
++     * _Note: If [BaseAudioPlayer.automaticallyUpdateNotificationMetadata] is true, this will
++     * get override on a track change_
++     */
++    internal var overrideAudioItem: AudioItem? = null
++        set(value) {
++            notificationMetadataBitmap = null
++            val headers = getNetworkHeaders()
++
++            if (field != value) {
++                if (value?.artwork != null) {
++                    notificationMetadataArtworkDisposable?.dispose()
++                    notificationMetadataArtworkDisposable = context.imageLoader.enqueue(
++                        ImageRequest.Builder(context)
++                            .data(value.artwork)
++                            .headers(headers)
++                            .target { result ->
++                                notificationMetadataBitmap = (result as BitmapDrawable).bitmap
++                                invalidate()
++                            }
++                            .build()
++                    )
++                }
++            }
++
++            field = value
++            invalidate()
++        }
++
++    private fun getTitle(index: Int? = null): String? {
++        val mediaItem = if (index == null) player.currentMediaItem else player.getMediaItemAt(index)
++
++        val audioItem = mediaItem?.getAudioItemHolder()?.audioItem
++        return overrideAudioItem?.title
++            ?:mediaItem?.mediaMetadata?.title?.toString()
++            ?: audioItem?.title
++    }
++
++    private fun getArtist(index: Int? = null): String? {
++        val mediaItem = if (index == null) player.currentMediaItem else player.getMediaItemAt(index)
++        val audioItem = mediaItem?.getAudioItemHolder()?.audioItem
++
++        return overrideAudioItem?.artist
++            ?: mediaItem?.mediaMetadata?.artist?.toString()
++            ?: mediaItem?.mediaMetadata?.albumArtist?.toString()
++            ?: audioItem?.artist
++    }
++
++    private fun getGenre(index: Int? = null): String? {
++        val mediaItem = if (index == null) player.currentMediaItem else player.getMediaItemAt(index)
++        return mediaItem?.mediaMetadata?.genre?.toString()
++    }
++
++    private fun getAlbumTitle(index: Int? = null): String? {
++        val mediaItem = if (index == null) player.currentMediaItem else player.getMediaItemAt(index)
++        return mediaItem?.mediaMetadata?.albumTitle?.toString()
++            ?: mediaItem?.getAudioItemHolder()?.audioItem?.albumTitle
++    }
++
++    private fun getArtworkUrl(index: Int? = null): String? {
++        return getMediaItemArtworkUrl(index)
++    }
++
++    private fun getMediaItemArtworkUrl(index: Int? = null): String? {
++        val mediaItem = if (index == null) player.currentMediaItem else player.getMediaItemAt(index)
++
++        return overrideAudioItem?.artwork
++            ?: mediaItem?.mediaMetadata?.artworkUri?.toString()
++            ?: mediaItem?.getAudioItemHolder()?.audioItem?.artwork
++    }
++
++    private fun getNetworkHeaders(): Headers {
++        return player.currentMediaItem?.getAudioItemHolder()?.audioItem?.options?.headers?.toHeaders() ?: Headers.Builder().build()
++    }
++
++    /**
++     * Returns the cached artwork bitmap for the current media item.
++     * Bitmap might be cached if the media item has extracted one from the media file
++     * or if a user is setting custom data for the notification.
++     */
++    private fun getCachedArtworkBitmap(index: Int? = null): Bitmap? {
++        val mediaItem = if (index == null) player.currentMediaItem else player.getMediaItemAt(index)
++        val isCurrent = index == null || index == player.currentMediaItemIndex
++        val artworkData = player.mediaMetadata.artworkData
++
++        return if (isCurrent && overrideAudioItem != null) {
++            notificationMetadataBitmap
++        } else if (isCurrent && artworkData != null) {
++            BitmapFactory.decodeByteArray(artworkData, 0, artworkData.size)
++        } else {
++            mediaItem?.getAudioItemHolder()?.artworkBitmap
++        }
++    }
++
++    private fun getDuration(index: Int? = null): Long? {
++        val mediaItem = if (index == null) player.currentMediaItem
++            else player.getMediaItemAt(index)
++
++        return if (player.isCurrentMediaItemDynamic || player.duration == C.TIME_UNSET) {
++            overrideAudioItem?.duration ?: mediaItem?.getAudioItemHolder()?.audioItem?.duration ?: -1
++        } else {
++            overrideAudioItem?.duration ?: player.duration
++        }
++    }
++
++    private fun getUserRating(index: Int? = null): RatingCompat? {
++        val mediaItem = if (index == null) player.currentMediaItem
++            else player.getMediaItemAt(index)
++        return RatingCompat.fromRating(mediaItem?.mediaMetadata?.userRating)
++    }
++
++    var showPlayPauseButton = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUsePlayPauseActions(value)
++            }
++        }
++
++    var showStopButton = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseStopAction(value)
++            }
++        }
++
++    var showForwardButton = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseFastForwardAction(value)
++            }
++        }
++
++    /**
++     * Controls whether or not this button should appear when the notification is compact (collapsed).
++     */
++    var showForwardButtonCompact = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseFastForwardActionInCompactView(value)
++            }
++        }
++
++    var showRewindButton = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseRewindAction(value)
++            }
++        }
++
++    /**
++     * Controls whether or not this button should appear when the notification is compact (collapsed).
++     */
++    var showRewindButtonCompact = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseRewindActionInCompactView(value)
++            }
++        }
++
++    var showNextButton = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseNextAction(value)
++            }
++        }
++
++    /**
++     * Controls whether or not this button should appear when the notification is compact (collapsed).
++     */
++    var showNextButtonCompact = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUseNextActionInCompactView(value)
++            }
++        }
++
++    var showPreviousButton = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUsePreviousAction(value)
++            }
++        }
++
++    /**
++     * Controls whether or not this button should appear when the notification is compact (collapsed).
++     */
++    var showPreviousButtonCompact = false
++        set(value) {
++            scope.launch {
++                field = value
++                internalNotificationManager?.setUsePreviousActionInCompactView(value)
++            }
++        }
++
++    var stopIcon: Int? = null
++    var forwardIcon: Int? = null
++    var rewindIcon: Int? = null
++
++    init {
++        mediaSessionConnector.setQueueNavigator(
++            object : TimelineQueueNavigator(mediaSession) {
++                override fun getSupportedQueueNavigatorActions(player: Player): Long {
++                    return buttons.fold(0) { acc, button ->
++                        acc or when (button) {
++                            is NotificationButton.NEXT -> {
++                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT
++                            }
++                            is NotificationButton.PREVIOUS -> {
++                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
++                            }
++                            else -> {
++                                0
++                            }
++                        }
++                    }
++                }
++
++                override fun getMediaDescription(
++                    player: Player,
++                    windowIndex: Int
++                ): MediaDescriptionCompat {
++                    val title = getTitle(windowIndex)
++                    val artist = getArtist(windowIndex)
++                    return MediaDescriptionCompat.Builder().apply {
++                        setTitle(title)
++                        setSubtitle(artist)
++                        setExtras(Bundle().apply {
++                            title?.let {
++                                putString(MediaMetadataCompat.METADATA_KEY_TITLE, it)
++                            }
++                            artist?.let {
++                                putString(MediaMetadataCompat.METADATA_KEY_ARTIST, it)
++                            }
++                        })
++                    }.build()
++                }
++            }
++        )
++        mediaSessionConnector.setMetadataDeduplicationEnabled(true)
++    }
++
++    /**
++     * Overrides the notification metadata with the given [AudioItem].
++     *
++     * _Note: If [BaseAudioPlayer.automaticallyUpdateNotificationMetadata] is true, this will
++     * get override on a track change._
++     */
++    public fun overrideMetadata(item: AudioItem) {
++        overrideAudioItem = item
++    }
++
++    public fun getMediaMetadataCompat(): MediaMetadataCompat {
++        val currentItemMetadata = player.currentMediaItem?.mediaMetadata
++
++        return MediaMetadataCompat.Builder().apply {
++            getArtist()?.let {
++                putString(MediaMetadataCompat.METADATA_KEY_ARTIST, it)
++            }
++            getTitle()?.let {
++                putString(MediaMetadataCompat.METADATA_KEY_TITLE, it)
++                putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, it)
++            }
++            currentItemMetadata?.subtitle?.let {
++                putString(
++                    MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, it.toString()
++                )
++            }
++            currentItemMetadata?.description?.let {
++                putString(
++                    MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, it.toString()
++                )
++            }
++            getAlbumTitle()?.let {
++                putString(MediaMetadataCompat.METADATA_KEY_ALBUM, it)
++            }
++            getGenre()?.let {
++                putString(MediaMetadataCompat.METADATA_KEY_GENRE, it)
++            }
++            getDuration()?.let {
++                putLong(MediaMetadataCompat.METADATA_KEY_DURATION, it)
++            }
++            getArtworkUrl()?.let {
++                putString(MediaMetadataCompat.METADATA_KEY_ART_URI, it)
++            }
++            getCachedArtworkBitmap()?.let {
++                putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, it);
++                putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, it);
++            }
++            getUserRating()?.let {
++                putRating(MediaMetadataCompat.METADATA_KEY_RATING, it)
++            }
++        }.build()
++    }
++
++    private fun createNotificationAction(
++        drawable: Int,
++        action: String,
++        instanceId: Int
++    ): NotificationCompat.Action {
++        val intent: Intent = Intent(action).setPackage(context.packageName)
++        val pendingIntent = PendingIntent.getBroadcast(
++            context,
++            instanceId,
++            intent,
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
++                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
++            } else {
++                PendingIntent.FLAG_CANCEL_CURRENT
++            }
++        )
++        return NotificationCompat.Action.Builder(drawable, action, pendingIntent).build()
++    }
++
++    private fun handlePlayerAction(action: String) {
++        when (action) {
++            REWIND -> {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.REWIND)
++            }
++            FORWARD -> {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.FORWARD)
++            }
++            STOP -> {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.STOP)
++            }
++
++        }
++    }
++
++    private val customActionReceiver = object : CustomActionReceiver {
++        override fun createCustomActions(
++            context: Context,
++            instanceId: Int
++        ): MutableMap<String, NotificationCompat.Action> {
++            if (!needsCustomActionsToAddMissingButtons) return mutableMapOf()
++            return mutableMapOf(
++                REWIND to createNotificationAction(
++                    rewindIcon ?: DEFAULT_REWIND_ICON,
++                    REWIND,
++                    instanceId
++                ),
++                FORWARD to createNotificationAction(
++                    forwardIcon ?: DEFAULT_FORWARD_ICON,
++                    FORWARD,
++                    instanceId
++                ),
++                STOP to createNotificationAction(
++                    stopIcon ?: DEFAULT_STOP_ICON,
++                    STOP,
++                    instanceId
++                )
++            )
++        }
++
++        override fun getCustomActions(player: Player): List<String> {
++            if (!needsCustomActionsToAddMissingButtons) return emptyList()
++            return buttons.mapNotNull {
++                when (it) {
++                    is NotificationButton.BACKWARD -> {
++                        REWIND
++                    }
++                    is NotificationButton.FORWARD -> {
++                        FORWARD
++                    }
++                    is NotificationButton.STOP -> {
++                        STOP
++                    }
++                    else -> {
++                        null
++                    }
++                }
++            }
++        }
++
++        override fun onCustomAction(player: Player, action: String, intent: Intent) {
++            handlePlayerAction(action)
++        }
++    }
++
++    fun invalidate() {
++        if (invalidateThrottleCount++ == 0) {
++            scope.launch {
++                internalNotificationManager?.invalidate()
++                mediaSessionConnector.invalidateMediaSessionQueue()
++                mediaSessionConnector.invalidateMediaSessionMetadata()
++                delay(300)
++                val wasThrottled = invalidateThrottleCount > 1
++                invalidateThrottleCount = 0
++                if (wasThrottled) {
++                    invalidate()
++                }
++            }
++        }
++    }
++
++    /**
++     * Create a media player notification that automatically updates. Call this
++     * method again with a different configuration to update the notification.
++     */
++    fun createNotification(config: NotificationConfig) = scope.launch {
++        if (isNotificationButtonsChanged(config.buttons)) {
++            hideNotification()
++        }
++
++        buttons.apply {
++            clear()
++            addAll(config.buttons)
++        }
++
++        stopIcon = null
++        forwardIcon = null
++        rewindIcon = null
++
++        updateMediaSessionPlaybackActions()
++
++        pendingIntent = config.pendingIntent
++        showPlayPauseButton = false
++        showForwardButton = false
++        showRewindButton = false
++        showNextButton = false
++        showPreviousButton = false
++        showStopButton = false
++        if (internalNotificationManager == null) {
++            internalNotificationManager =
++                PlayerNotificationManager.Builder(context, NOTIFICATION_ID, CHANNEL_ID)
++                    .apply {
++                        setChannelNameResourceId(R.string.playback_channel_name)
++                        setMediaDescriptionAdapter(descriptionAdapter)
++                        setCustomActionReceiver(customActionReceiver)
++                        setNotificationListener(this@NotificationManager)
++
++                        for (button in buttons) {
++                            if (button == null) continue
++                            when (button) {
++                                is NotificationButton.PLAY_PAUSE -> {
++                                    button.playIcon?.let { setPlayActionIconResourceId(it) }
++                                    button.pauseIcon?.let { setPauseActionIconResourceId(it) }
++                                }
++
++                                is NotificationButton.STOP -> button.icon?.let {
++                                    setStopActionIconResourceId(
++                                        it
++                                    )
++                                }
++
++                                is NotificationButton.FORWARD -> button.icon?.let {
++                                    setFastForwardActionIconResourceId(
++                                        it
++                                    )
++                                }
++
++                                is NotificationButton.BACKWARD -> button.icon?.let {
++                                    setRewindActionIconResourceId(
++                                        it
++                                    )
++                                }
++
++                                is NotificationButton.NEXT -> button.icon?.let {
++                                    setNextActionIconResourceId(
++                                        it
++                                    )
++                                }
++
++                                is NotificationButton.PREVIOUS -> button.icon?.let {
++                                    setPreviousActionIconResourceId(
++                                        it
++                                    )
++                                }
++
++                                else -> {}
++                            }
++                        }
++                    }.build().apply {
++                        setMediaSessionToken(mediaSession.sessionToken)
++                        setPlayer(player)
++                    }
++        }
++        setupInternalNotificationManager(config)
++    }
++
++    private fun isNotificationButtonsChanged(newButtons: List<NotificationButton>): Boolean {
++        val currentNotificationButtonsMapByType = buttons.filterNotNull().associateBy { it::class }
++        return newButtons.any { newButton ->
++            when (newButton) {
++                is NotificationButton.PLAY_PAUSE -> {
++                    (currentNotificationButtonsMapByType[NotificationButton.PLAY_PAUSE::class] as? NotificationButton.PLAY_PAUSE).let { currentButton ->
++                        newButton.pauseIcon != currentButton?.pauseIcon || newButton.playIcon != currentButton?.playIcon
++                    }
++                }
++
++                is NotificationButton.STOP -> {
++                    (currentNotificationButtonsMapByType[NotificationButton.STOP::class] as? NotificationButton.STOP).let { currentButton ->
++                        newButton.icon != currentButton?.icon
++                    }
++                }
++
++                is NotificationButton.FORWARD -> {
++                    (currentNotificationButtonsMapByType[NotificationButton.FORWARD::class] as? NotificationButton.FORWARD).let { currentButton ->
++                        newButton.icon != currentButton?.icon
++                    }
++                }
++
++                is NotificationButton.BACKWARD -> {
++                    (currentNotificationButtonsMapByType[NotificationButton.BACKWARD::class] as? NotificationButton.BACKWARD).let { currentButton ->
++                        newButton.icon != currentButton?.icon
++                    }
++                }
++
++                is NotificationButton.NEXT -> {
++                    (currentNotificationButtonsMapByType[NotificationButton.NEXT::class] as? NotificationButton.NEXT).let { currentButton ->
++                        newButton.icon != currentButton?.icon
++                    }
++                }
++
++                is NotificationButton.PREVIOUS -> {
++                    (currentNotificationButtonsMapByType[NotificationButton.PREVIOUS::class] as? NotificationButton.PREVIOUS).let { currentButton ->
++                        newButton.icon != currentButton?.icon
++                    }
++                }
++
++                else -> false
++            }
++        }
++    }
++
++    private fun updateMediaSessionPlaybackActions() {
++        mediaSessionConnector.setEnabledPlaybackActions(
++            buttons.fold(
++                PlaybackStateCompat.ACTION_SET_REPEAT_MODE
++                        or PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
++                        or PlaybackStateCompat.ACTION_SET_PLAYBACK_SPEED
++            ) { acc, button ->
++                acc or when (button) {
++                    is NotificationButton.PLAY_PAUSE -> {
++                        PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE
++                    }
++                    is NotificationButton.BACKWARD -> {
++                        rewindIcon = button.icon ?: rewindIcon
++                        PlaybackStateCompat.ACTION_REWIND
++                    }
++                    is NotificationButton.FORWARD -> {
++                        forwardIcon = button.icon ?: forwardIcon
++                        PlaybackStateCompat.ACTION_FAST_FORWARD
++                    }
++                    is NotificationButton.SEEK_TO -> {
++                        PlaybackStateCompat.ACTION_SEEK_TO
++                    }
++                    is NotificationButton.STOP -> {
++                        stopIcon = button.icon ?: stopIcon
++                        PlaybackStateCompat.ACTION_STOP
++                    }
++                    else -> {
++                        0
++                    }
++                }
++            }
++        )
++        if (needsCustomActionsToAddMissingButtons) {
++            val customActionProviders = buttons
++                .sortedBy {
++                    when (it) {
++                        is NotificationButton.BACKWARD -> 1
++                        is NotificationButton.FORWARD -> 2
++                        is NotificationButton.STOP -> 3
++                        else -> 4
++                    }
++                }
++                .mapNotNull {
++                    when (it) {
++                        is NotificationButton.BACKWARD -> {
++                            createMediaSessionAction(rewindIcon ?: DEFAULT_REWIND_ICON, REWIND)
++                        }
++                        is NotificationButton.FORWARD -> {
++                            createMediaSessionAction(forwardIcon ?: DEFAULT_FORWARD_ICON, FORWARD)
++                        }
++                        is NotificationButton.STOP -> {
++                            createMediaSessionAction(stopIcon ?: DEFAULT_STOP_ICON, STOP)
++                        }
++                        else -> {
++                            null
++                        }
++                    }
++                }
++            mediaSessionConnector.setCustomActionProviders(*customActionProviders.toTypedArray())
++        }
++    }
++
++    private fun setupInternalNotificationManager(config: NotificationConfig) {
++        internalNotificationManager?.run {
++            setColor(config.accentColor ?: Color.TRANSPARENT)
++            config.smallIcon?.let { setSmallIcon(it) }
++            for (button in buttons) {
++                if (button == null) continue
++                when (button) {
++                    is NotificationButton.PLAY_PAUSE -> {
++                        showPlayPauseButton = true
++                    }
++
++                    is NotificationButton.STOP -> {
++                        showStopButton = true
++                    }
++
++                    is NotificationButton.FORWARD -> {
++                        showForwardButton = true
++                        showForwardButtonCompact = button.isCompact
++                    }
++
++                    is NotificationButton.BACKWARD -> {
++                        showRewindButton = true
++                        showRewindButtonCompact = button.isCompact
++                    }
++
++                    is NotificationButton.NEXT -> {
++                        showNextButton = true
++                        showNextButtonCompact = button.isCompact
++                    }
++
++                    is NotificationButton.PREVIOUS -> {
++                        showPreviousButton = true
++                        showPreviousButtonCompact = button.isCompact
++                    }
++
++                    else -> {}
++                }
++            }
++        }
++    }
++
++    fun hideNotification() {
++        internalNotificationManager?.setPlayer(null)
++        internalNotificationManager = null
++        invalidate()
++    }
++
++    override fun onNotificationPosted(
++        notificationId: Int,
++        notification: Notification,
++        ongoing: Boolean
++    ) {
++        scope.launch {
++            event.updateNotificationState(
++                NotificationState.POSTED(
++                    notificationId,
++                    notification,
++                    ongoing
++                )
++            )
++        }
++    }
++
++    override fun onNotificationCancelled(notificationId: Int, dismissedByUser: Boolean) {
++        scope.launch {
++            event.updateNotificationState(NotificationState.CANCELLED(notificationId))
++        }
++    }
++
++    internal fun destroy() = scope.launch {
++        internalNotificationManager?.setPlayer(null)
++    }
++
++    private fun createMediaSessionAction(
++        @DrawableRes drawableRes: Int,
++        actionName: String
++    ): MediaSessionConnector.CustomActionProvider {
++        return object : MediaSessionConnector.CustomActionProvider {
++            override fun getCustomAction(player: Player): PlaybackStateCompat.CustomAction? {
++                return PlaybackStateCompat.CustomAction.Builder(actionName, actionName, drawableRes)
++                    .build()
++            }
++
++            override fun onCustomAction(player: Player, action: String, extras: Bundle?) {
++                handlePlayerAction(action)
++            }
++        }
++    }
++
++    companion object {
++        // Due to the removal of rewind, forward, and stop buttons from the standard notification
++        // controls in Android 13, custom actions are implemented to support them
++        // https://developer.android.com/about/versions/13/behavior-changes-13#playback-controls
++        private val needsCustomActionsToAddMissingButtons = Build.VERSION.SDK_INT >= 33
++        private const val REWIND = "rewind"
++        private const val FORWARD = "forward"
++        private const val STOP = "stop"
++        private const val NOTIFICATION_ID = 1
++        private const val CHANNEL_ID = "kotlin_audio_player"
++        private val DEFAULT_STOP_ICON =
++            com.google.android.exoplayer2.ui.R.drawable.exo_notification_stop
++        private val DEFAULT_REWIND_ICON =
++            com.google.android.exoplayer2.ui.R.drawable.exo_notification_rewind
++        private val DEFAULT_FORWARD_ICON =
++            com.google.android.exoplayer2.ui.R.drawable.exo_notification_fastforward
++    }
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/AudioPlayer.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/AudioPlayer.kt
+new file mode 100644
+index 0000000..5dc6a1f
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/AudioPlayer.kt
+@@ -0,0 +1,8 @@
++package com.doublesymmetry.kotlinaudio.players
++
++import android.content.Context
++import com.doublesymmetry.kotlinaudio.models.BufferConfig
++import com.doublesymmetry.kotlinaudio.models.CacheConfig
++import com.doublesymmetry.kotlinaudio.models.PlayerConfig
++
++class AudioPlayer(context: Context, playerConfig: PlayerConfig = PlayerConfig(), bufferConfig: BufferConfig? = null, cacheConfig: CacheConfig? = null): BaseAudioPlayer(context, playerConfig, bufferConfig, cacheConfig)
+\ No newline at end of file
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/BaseAudioPlayer.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/BaseAudioPlayer.kt
+new file mode 100644
+index 0000000..b9636ba
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/BaseAudioPlayer.kt
+@@ -0,0 +1,804 @@
++package com.doublesymmetry.kotlinaudio.players
++
++import android.content.Context
++import android.media.AudioManager
++import android.media.AudioManager.AUDIOFOCUS_LOSS
++import android.net.Uri
++import android.os.Bundle
++import android.os.ResultReceiver
++import android.support.v4.media.RatingCompat
++import android.support.v4.media.session.MediaSessionCompat
++import androidx.annotation.CallSuper
++import androidx.core.content.ContextCompat
++import androidx.media.AudioAttributesCompat
++import androidx.media.AudioAttributesCompat.CONTENT_TYPE_MUSIC
++import androidx.media.AudioAttributesCompat.USAGE_MEDIA
++import androidx.media.AudioFocusRequestCompat
++import androidx.media.AudioManagerCompat
++import androidx.media.AudioManagerCompat.AUDIOFOCUS_GAIN
++import com.doublesymmetry.kotlinaudio.event.EventHolder
++import com.doublesymmetry.kotlinaudio.event.NotificationEventHolder
++import com.doublesymmetry.kotlinaudio.event.PlayerEventHolder
++import com.doublesymmetry.kotlinaudio.models.AudioContentType
++import com.doublesymmetry.kotlinaudio.models.AudioItem
++import com.doublesymmetry.kotlinaudio.models.AudioItemHolder
++import com.doublesymmetry.kotlinaudio.models.AudioItemTransitionReason
++import com.doublesymmetry.kotlinaudio.models.AudioPlayerState
++import com.doublesymmetry.kotlinaudio.models.BufferConfig
++import com.doublesymmetry.kotlinaudio.models.CacheConfig
++import com.doublesymmetry.kotlinaudio.models.DefaultPlayerOptions
++import com.doublesymmetry.kotlinaudio.models.MediaSessionCallback
++import com.doublesymmetry.kotlinaudio.models.MediaType
++import com.doublesymmetry.kotlinaudio.models.PlayWhenReadyChangeData
++import com.doublesymmetry.kotlinaudio.models.PlaybackError
++import com.doublesymmetry.kotlinaudio.models.PlayerConfig
++import com.doublesymmetry.kotlinaudio.models.PlayerOptions
++import com.doublesymmetry.kotlinaudio.models.PositionChangedReason
++import com.doublesymmetry.kotlinaudio.models.WakeMode
++import com.doublesymmetry.kotlinaudio.notification.NotificationManager
++import com.doublesymmetry.kotlinaudio.players.components.PlayerCache
++import com.doublesymmetry.kotlinaudio.players.components.getAudioItemHolder
++import com.doublesymmetry.kotlinaudio.utils.isUriLocalFile
++import com.google.android.exoplayer2.C
++import com.google.android.exoplayer2.DefaultLoadControl
++import com.google.android.exoplayer2.DefaultLoadControl.Builder
++import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BACK_BUFFER_DURATION_MS
++import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
++import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS
++import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_MAX_BUFFER_MS
++import com.google.android.exoplayer2.DefaultLoadControl.DEFAULT_MIN_BUFFER_MS
++import com.google.android.exoplayer2.ExoPlayer
++import com.google.android.exoplayer2.ForwardingPlayer
++import com.google.android.exoplayer2.MediaItem
++import com.google.android.exoplayer2.MediaMetadata
++import com.google.android.exoplayer2.PlaybackException
++import com.google.android.exoplayer2.Player
++import com.google.android.exoplayer2.Player.Listener
++import com.google.android.exoplayer2.audio.AudioAttributes
++import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
++import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
++import com.google.android.exoplayer2.metadata.Metadata
++import com.google.android.exoplayer2.source.MediaSource
++import com.google.android.exoplayer2.source.ProgressiveMediaSource
++import com.google.android.exoplayer2.source.dash.DashMediaSource
++import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
++import com.google.android.exoplayer2.source.hls.HlsMediaSource
++import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
++import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
++import com.google.android.exoplayer2.upstream.DataSource
++import com.google.android.exoplayer2.upstream.DataSpec
++import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
++import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
++import com.google.android.exoplayer2.upstream.RawResourceDataSource
++import com.google.android.exoplayer2.upstream.cache.CacheDataSource
++import com.google.android.exoplayer2.upstream.cache.SimpleCache
++import com.google.android.exoplayer2.util.Util
++import kotlinx.coroutines.MainScope
++import kotlinx.coroutines.launch
++import com.google.android.exoplayer2.ext.cronet.CronetDataSource
++import org.chromium.net.CronetEngine
++import timber.log.Timber
++import java.util.Locale
++import java.util.concurrent.Executors
++import java.util.concurrent.TimeUnit
++
++abstract class BaseAudioPlayer internal constructor(
++    internal val context: Context,
++    playerConfig: PlayerConfig,
++    private val bufferConfig: BufferConfig?,
++    private val cacheConfig: CacheConfig?
++) : AudioManager.OnAudioFocusChangeListener {
++    protected val exoPlayer: ExoPlayer
++
++    private var cache: SimpleCache? = null
++    private val scope = MainScope()
++    private var playerConfig: PlayerConfig = playerConfig
++
++    val notificationManager: NotificationManager
++
++    open val playerOptions: PlayerOptions = DefaultPlayerOptions()
++
++    open val currentItem: AudioItem?
++        get() = exoPlayer.currentMediaItem?.getAudioItemHolder()?.audioItem
++
++    var playbackError: PlaybackError? = null
++    var playerState: AudioPlayerState = AudioPlayerState.IDLE
++        private set(value) {
++            if (value != field) {
++                field = value
++                playerEventHolder.updateAudioPlayerState(value)
++                if (!playerConfig.handleAudioFocus) {
++                    when (value) {
++                        AudioPlayerState.IDLE,
++                        AudioPlayerState.ERROR -> abandonAudioFocusIfHeld()
++                        AudioPlayerState.READY -> requestAudioFocus()
++                        else -> {}
++                    }
++                }
++            }
++        }
++
++    var playWhenReady: Boolean
++        get() = exoPlayer.playWhenReady
++        set(value) {
++            exoPlayer.playWhenReady = value
++        }
++
++    val duration: Long
++        get() {
++            return if (exoPlayer.duration == C.TIME_UNSET) 0
++            else exoPlayer.duration
++        }
++
++    val isCurrentMediaItemLive: Boolean
++        get() = exoPlayer.isCurrentMediaItemLive
++
++    private var oldPosition = 0L
++
++    val position: Long
++        get() {
++            return if (exoPlayer.currentPosition == C.POSITION_UNSET.toLong()) 0
++            else exoPlayer.currentPosition
++        }
++
++    val bufferedPosition: Long
++        get() {
++            return if (exoPlayer.bufferedPosition == C.POSITION_UNSET.toLong()) 0
++            else exoPlayer.bufferedPosition
++        }
++
++    var volume: Float
++        get() = exoPlayer.volume
++        set(value) {
++            exoPlayer.volume = value * volumeMultiplier
++        }
++
++    var playbackSpeed: Float
++        get() = exoPlayer.playbackParameters.speed
++        set(value) {
++            exoPlayer.setPlaybackSpeed(value)
++        }
++
++    var automaticallyUpdateNotificationMetadata: Boolean = true
++
++    private var volumeMultiplier = 1f
++        private set(value) {
++            field = value
++            volume = volume
++        }
++
++    val isPlaying
++        get() = exoPlayer.isPlaying
++
++    private val notificationEventHolder = NotificationEventHolder()
++    private val playerEventHolder = PlayerEventHolder()
++
++    var ratingType: Int = RatingCompat.RATING_NONE
++        set(value) {
++            field = value
++
++            mediaSession.setRatingType(ratingType)
++            mediaSessionConnector.setRatingCallback(object : MediaSessionConnector.RatingCallback {
++                override fun onCommand(
++                    player: Player,
++                    command: String,
++                    extras: Bundle?,
++                    cb: ResultReceiver?
++                ): Boolean {
++                    return true
++                }
++
++                override fun onSetRating(player: Player, rating: RatingCompat) {
++                    playerEventHolder.updateOnPlayerActionTriggeredExternally(
++                        MediaSessionCallback.RATING(
++                            rating,
++                            null
++                        )
++                    )
++                }
++
++                override fun onSetRating(player: Player, rating: RatingCompat, extras: Bundle?) {
++                    playerEventHolder.updateOnPlayerActionTriggeredExternally(
++                        MediaSessionCallback.RATING(
++                            rating,
++                            extras
++                        )
++                    )
++                }
++            })
++        }
++
++    val event = EventHolder(notificationEventHolder, playerEventHolder)
++
++    private var focus: AudioFocusRequestCompat? = null
++    private var hasAudioFocus = false
++    private var wasDucking = false
++
++    private val mediaSession = MediaSessionCompat(context, "KotlinAudioPlayer")
++    private val mediaSessionConnector = MediaSessionConnector(mediaSession)
++
++    init {
++        if (cacheConfig != null) {
++            cache = PlayerCache.getInstance(context, cacheConfig)
++        }
++
++        exoPlayer = ExoPlayer.Builder(context)
++            .setHandleAudioBecomingNoisy(playerConfig.handleAudioBecomingNoisy)
++            .setWakeMode(
++                when (playerConfig.wakeMode) {
++                    WakeMode.NONE -> C.WAKE_MODE_NONE
++                    WakeMode.LOCAL -> C.WAKE_MODE_LOCAL
++                    WakeMode.NETWORK -> C.WAKE_MODE_NETWORK
++                }
++            )
++            .apply {
++                if (bufferConfig != null) setLoadControl(setupBuffer(bufferConfig))
++            }
++            .build()
++
++        mediaSession.isActive = true
++
++        val playerToUse =
++            if (playerConfig.interceptPlayerActionsTriggeredExternally) createForwardingPlayer() else exoPlayer
++
++        notificationManager = NotificationManager(
++            context,
++            playerToUse,
++            mediaSession,
++            mediaSessionConnector,
++            notificationEventHolder,
++            playerEventHolder
++        )
++
++        exoPlayer.addListener(PlayerListener())
++
++        scope.launch {
++            // Whether ExoPlayer should manage audio focus for us automatically
++            // see https://medium.com/google-exoplayer/easy-audio-focus-with-exoplayer-a2dcbbe4640e
++            val audioAttributes = AudioAttributes.Builder()
++                .setUsage(C.USAGE_MEDIA)
++                .setContentType(
++                    when (playerConfig.audioContentType) {
++                        AudioContentType.MUSIC -> C.AUDIO_CONTENT_TYPE_MUSIC
++                        AudioContentType.SPEECH -> C.AUDIO_CONTENT_TYPE_SPEECH
++                        AudioContentType.SONIFICATION -> C.AUDIO_CONTENT_TYPE_SONIFICATION
++                        AudioContentType.MOVIE -> C.AUDIO_CONTENT_TYPE_MOVIE
++                        AudioContentType.UNKNOWN -> C.AUDIO_CONTENT_TYPE_UNKNOWN
++                    }
++                )
++                .build();
++            exoPlayer.setAudioAttributes(audioAttributes, playerConfig.handleAudioFocus);
++            mediaSessionConnector.setPlayer(playerToUse)
++            mediaSessionConnector.setMediaMetadataProvider {
++                notificationManager.getMediaMetadataCompat()
++            }
++        }
++
++        playerEventHolder.updateAudioPlayerState(AudioPlayerState.IDLE)
++    }
++
++    private fun createForwardingPlayer(): ForwardingPlayer {
++        return object : ForwardingPlayer(exoPlayer) {
++            override fun play() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.PLAY)
++            }
++
++            override fun pause() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.PAUSE)
++            }
++
++            override fun seekToNext() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.NEXT)
++            }
++
++            override fun seekToPrevious() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.PREVIOUS)
++            }
++
++            override fun seekForward() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.FORWARD)
++            }
++
++            override fun seekBack() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.REWIND)
++            }
++
++            override fun stop() {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(MediaSessionCallback.STOP)
++            }
++
++            override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(
++                    MediaSessionCallback.SEEK(
++                        positionMs
++                    )
++                )
++            }
++
++            override fun seekTo(positionMs: Long) {
++                playerEventHolder.updateOnPlayerActionTriggeredExternally(
++                    MediaSessionCallback.SEEK(
++                        positionMs
++                    )
++                )
++            }
++        }
++    }
++
++    internal fun updateNotificationIfNecessary(overrideAudioItem: AudioItem? = null) {
++        if (automaticallyUpdateNotificationMetadata) {
++            notificationManager.overrideAudioItem = overrideAudioItem
++        }
++    }
++
++    private fun setupBuffer(bufferConfig: BufferConfig): DefaultLoadControl {
++        bufferConfig.apply {
++            val multiplier =
++                DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS / DEFAULT_BUFFER_FOR_PLAYBACK_MS
++            val minBuffer =
++                if (minBuffer != null && minBuffer != 0) minBuffer else DEFAULT_MIN_BUFFER_MS
++            val maxBuffer =
++                if (maxBuffer != null && maxBuffer != 0) maxBuffer else DEFAULT_MAX_BUFFER_MS
++            val playBuffer =
++                if (playBuffer != null && playBuffer != 0) playBuffer else DEFAULT_BUFFER_FOR_PLAYBACK_MS
++            val backBuffer =
++                if (backBuffer != null && backBuffer != 0) backBuffer else DEFAULT_BACK_BUFFER_DURATION_MS
++
++            return Builder()
++                .setBufferDurationsMs(minBuffer, maxBuffer, playBuffer, playBuffer * multiplier)
++                .setBackBuffer(backBuffer, false)
++                .build()
++        }
++    }
++
++    /**
++     * Will replace the current item with a new one and load it into the player.
++     * @param item The [AudioItem] to replace the current one.
++     * @param playWhenReady Whether playback starts automatically.
++     */
++    open fun load(item: AudioItem, playWhenReady: Boolean = true) {
++        exoPlayer.playWhenReady = playWhenReady
++        load(item)
++    }
++
++    /**
++     * Will replace the current item with a new one and load it into the player.
++     * @param item The [AudioItem] to replace the current one.
++     */
++    open fun load(item: AudioItem) {
++        val mediaSource = getMediaSourceFromAudioItem(item)
++        exoPlayer.addMediaSource(mediaSource)
++        exoPlayer.prepare()
++    }
++
++    fun togglePlaying() {
++        if (exoPlayer.isPlaying) {
++            pause()
++        } else {
++            play()
++        }
++    }
++
++    var skipSilence: Boolean
++        get() = exoPlayer.skipSilenceEnabled
++        set(value) {
++            exoPlayer.skipSilenceEnabled = value;
++        }
++
++    fun play() {
++        exoPlayer.play()
++        if (currentItem != null) {
++            exoPlayer.prepare()
++        }
++    }
++
++    fun prepare() {
++        if (currentItem != null) {
++            exoPlayer.prepare()
++        }
++    }
++
++    fun pause() {
++        exoPlayer.pause()
++    }
++
++    /**
++     * Stops playback, without clearing the active item. Calling this method will cause the playback
++     * state to transition to AudioPlayerState.IDLE and the player will release the loaded media and
++     * resources required for playback.
++     */
++    @CallSuper
++    open fun stop() {
++        playerState = AudioPlayerState.STOPPED
++        exoPlayer.playWhenReady = false
++        exoPlayer.stop()
++    }
++
++    @CallSuper
++    open fun clear() {
++        exoPlayer.clearMediaItems()
++    }
++
++    /**
++     * Pause playback whenever an item plays to its end.
++     */
++    fun setPauseAtEndOfItem(pause: Boolean) {
++        exoPlayer.pauseAtEndOfMediaItems = pause
++    }
++
++    /**
++     * Stops and destroys the player. Only call this when you are finished using the player, otherwise use [pause].
++     */
++    @CallSuper
++    open fun destroy() {
++        abandonAudioFocusIfHeld()
++        stop()
++        notificationManager.destroy()
++        exoPlayer.release()
++        cache?.release()
++        cache = null
++        mediaSession.isActive = false
++    }
++
++    open fun seek(duration: Long, unit: TimeUnit) {
++        val positionMs = TimeUnit.MILLISECONDS.convert(duration, unit)
++        exoPlayer.seekTo(positionMs)
++    }
++
++    open fun seekBy(offset: Long, unit: TimeUnit) {
++        val positionMs = exoPlayer.currentPosition + TimeUnit.MILLISECONDS.convert(offset, unit)
++        exoPlayer.seekTo(positionMs)
++    }
++
++    protected fun getMediaSourceFromAudioItem(audioItem: AudioItem): MediaSource {
++        val uri = Uri.parse(audioItem.audioUrl)
++        val mediaItem = MediaItem.Builder()
++            .setUri(audioItem.audioUrl)
++            .setTag(AudioItemHolder(audioItem))
++            .build()
++
++        val userAgent =
++            if (audioItem.options == null || audioItem.options!!.userAgent.isNullOrBlank()) {
++                Util.getUserAgent(context, APPLICATION_NAME)
++            } else {
++                audioItem.options!!.userAgent
++            }
++
++        val factory: DataSource.Factory = when {
++            audioItem.options?.resourceId != null -> {
++                val raw = RawResourceDataSource(context)
++                raw.open(DataSpec(uri))
++                DataSource.Factory { raw }
++            }
++            isUriLocalFile(uri) -> {
++                DefaultDataSourceFactory(context, userAgent)
++            }
++            else -> {
++                val tempFactory = createHttpDataSourceFactory(userAgent, audioItem)
++                enableCaching(tempFactory)
++            }
++        }
++
++        return when (audioItem.type) {
++            MediaType.DASH -> createDashSource(mediaItem, factory)
++            MediaType.HLS -> createHlsSource(mediaItem, factory)
++            MediaType.SMOOTH_STREAMING -> createSsSource(mediaItem, factory)
++            else -> createProgressiveSource(mediaItem, factory)
++        }
++    }
++
++    private fun createDashSource(mediaItem: MediaItem, factory: DataSource.Factory?): MediaSource {
++        return DashMediaSource.Factory(DefaultDashChunkSource.Factory(factory!!), factory)
++            .createMediaSource(mediaItem)
++    }
++
++    private fun createHlsSource(mediaItem: MediaItem, factory: DataSource.Factory?): MediaSource {
++        return HlsMediaSource.Factory(factory!!)
++            .createMediaSource(mediaItem)
++    }
++
++    private fun createSsSource(mediaItem: MediaItem, factory: DataSource.Factory?): MediaSource {
++        return SsMediaSource.Factory(DefaultSsChunkSource.Factory(factory!!), factory)
++            .createMediaSource(mediaItem)
++    }
++
++    private fun createProgressiveSource(
++        mediaItem: MediaItem,
++        factory: DataSource.Factory
++    ): ProgressiveMediaSource {
++        return ProgressiveMediaSource.Factory(
++            factory, DefaultExtractorsFactory()
++                .setConstantBitrateSeekingEnabled(true)
++        )
++            .createMediaSource(mediaItem)
++    }
++
++    private fun enableCaching(factory: DataSource.Factory): DataSource.Factory {
++        return if (cache == null || cacheConfig == null || (cacheConfig.maxCacheSize ?: 0) <= 0) {
++            factory
++        } else {
++            CacheDataSource.Factory().apply {
++                setCache(this@BaseAudioPlayer.cache!!)
++                setUpstreamDataSourceFactory(factory)
++                setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
++            }
++        }
++    }
++
++    private fun createHttpDataSourceFactory(
++        userAgent: String?,
++        audioItem: AudioItem
++    ): DataSource.Factory {
++        val engine = getCronetEngine(context)
++        if (engine != null) {
++            Timber.d("Using Cronet DataSource (Chrome TLS fingerprint)")
++            val factory = CronetDataSource.Factory(engine, Executors.newCachedThreadPool())
++            if (userAgent != null) {
++                factory.setUserAgent(userAgent)
++            }
++            audioItem.options?.headers?.let {
++                factory.setDefaultRequestProperties(it.toMap())
++            }
++            return factory
++        }
++
++        // Fallback to default HTTP if Cronet unavailable
++        Timber.w("Cronet unavailable, falling back to DefaultHttpDataSource")
++        return DefaultHttpDataSource.Factory().apply {
++            setUserAgent(userAgent)
++            setAllowCrossProtocolRedirects(true)
++            audioItem.options?.headers?.let {
++                setDefaultRequestProperties(it.toMap())
++            }
++        }
++    }
++
++    private fun requestAudioFocus() {
++        if (hasAudioFocus) return
++        Timber.d("Requesting audio focus...")
++
++        val manager = ContextCompat.getSystemService(context, AudioManager::class.java)
++
++        focus = AudioFocusRequestCompat.Builder(AUDIOFOCUS_GAIN)
++            .setOnAudioFocusChangeListener(this)
++            .setAudioAttributes(
++                AudioAttributesCompat.Builder()
++                    .setUsage(USAGE_MEDIA)
++                    .setContentType(CONTENT_TYPE_MUSIC)
++                    .build()
++            )
++            .setWillPauseWhenDucked(playerOptions.alwaysPauseOnInterruption)
++            .build()
++
++        val result: Int = if (manager != null && focus != null) {
++            AudioManagerCompat.requestAudioFocus(manager, focus!!)
++        } else {
++            AudioManager.AUDIOFOCUS_REQUEST_FAILED
++        }
++
++        hasAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
++    }
++
++    private fun abandonAudioFocusIfHeld() {
++        if (!hasAudioFocus) return
++        Timber.d("Abandoning audio focus...")
++
++        val manager = ContextCompat.getSystemService(context, AudioManager::class.java)
++
++        val result: Int = if (manager != null && focus != null) {
++            AudioManagerCompat.abandonAudioFocusRequest(manager, focus!!)
++        } else {
++            AudioManager.AUDIOFOCUS_REQUEST_FAILED
++        }
++
++        hasAudioFocus = (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
++    }
++
++    override fun onAudioFocusChange(focusChange: Int) {
++        Timber.d("Audio focus changed")
++        val isPermanent = focusChange == AUDIOFOCUS_LOSS
++        val isPaused = when (focusChange) {
++            AUDIOFOCUS_LOSS, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> true
++            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> playerOptions.alwaysPauseOnInterruption
++            else -> false
++        }
++        if (!playerConfig.handleAudioFocus) {
++            if (isPermanent) abandonAudioFocusIfHeld()
++
++            val isDucking = focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
++                    && !playerOptions.alwaysPauseOnInterruption
++            if (isDucking) {
++                volumeMultiplier = 0.5f
++                wasDucking = true
++            } else if (wasDucking) {
++                volumeMultiplier = 1f
++                wasDucking = false
++            }
++        }
++
++        playerEventHolder.updateOnAudioFocusChanged(isPaused, isPermanent)
++    }
++
++    companion object {
++        const val APPLICATION_NAME = "react-native-track-player"
++
++        @Volatile
++        private var cronetEngine: CronetEngine? = null
++
++        private fun getCronetEngine(context: Context): CronetEngine? {
++            cronetEngine?.let { return it }
++            synchronized(this) {
++                cronetEngine?.let { return it }
++                try {
++                    val engine = CronetEngine.Builder(context.applicationContext)
++                        .enableHttp2(true)
++                        .enableQuic(true)
++                        .build()
++                    cronetEngine = engine
++                    Timber.d("Cronet engine initialized successfully")
++                    return engine
++                } catch (e: Exception) {
++                    Timber.e(e, "Failed to initialize Cronet engine")
++                    return null
++                }
++            }
++        }
++    }
++
++    inner class PlayerListener : Listener {
++        /**
++         * Called when there is metadata associated with the current playback time.
++         */
++        override fun onMetadata(metadata: Metadata) {
++            playerEventHolder.updateOnTimedMetadata(metadata)
++        }
++
++        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
++            playerEventHolder.updateOnCommonMetadata(mediaMetadata)
++        }
++
++        /**
++         * A position discontinuity occurs when the playing period changes, the playback position
++         * jumps within the period currently being played, or when the playing period has been
++         * skipped or removed.
++         */
++        override fun onPositionDiscontinuity(
++            oldPosition: Player.PositionInfo,
++            newPosition: Player.PositionInfo,
++            reason: Int
++        ) {
++            this@BaseAudioPlayer.oldPosition = oldPosition.positionMs
++
++            when (reason) {
++                Player.DISCONTINUITY_REASON_AUTO_TRANSITION -> playerEventHolder.updatePositionChangedReason(
++                    PositionChangedReason.AUTO(oldPosition.positionMs, newPosition.positionMs)
++                )
++                Player.DISCONTINUITY_REASON_SEEK -> playerEventHolder.updatePositionChangedReason(
++                    PositionChangedReason.SEEK(oldPosition.positionMs, newPosition.positionMs)
++                )
++                Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT -> playerEventHolder.updatePositionChangedReason(
++                    PositionChangedReason.SEEK_FAILED(
++                        oldPosition.positionMs,
++                        newPosition.positionMs
++                    )
++                )
++                Player.DISCONTINUITY_REASON_REMOVE -> playerEventHolder.updatePositionChangedReason(
++                    PositionChangedReason.QUEUE_CHANGED(
++                        oldPosition.positionMs,
++                        newPosition.positionMs
++                    )
++                )
++                Player.DISCONTINUITY_REASON_SKIP -> playerEventHolder.updatePositionChangedReason(
++                    PositionChangedReason.SKIPPED_PERIOD(
++                        oldPosition.positionMs,
++                        newPosition.positionMs
++                    )
++                )
++                Player.DISCONTINUITY_REASON_INTERNAL -> playerEventHolder.updatePositionChangedReason(
++                    PositionChangedReason.UNKNOWN(oldPosition.positionMs, newPosition.positionMs)
++                )
++            }
++        }
++
++        /**
++         * Called when playback transitions to a media item or starts repeating a media item
++         * according to the current repeat mode. Note that this callback is also called when the
++         * playlist becomes non-empty or empty as a consequence of a playlist change.
++         */
++        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
++            when (reason) {
++                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> playerEventHolder.updateAudioItemTransition(
++                    AudioItemTransitionReason.AUTO(oldPosition)
++                )
++                Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> playerEventHolder.updateAudioItemTransition(
++                    AudioItemTransitionReason.QUEUE_CHANGED(oldPosition)
++                )
++                Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> playerEventHolder.updateAudioItemTransition(
++                    AudioItemTransitionReason.REPEAT(oldPosition)
++                )
++                Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> playerEventHolder.updateAudioItemTransition(
++                    AudioItemTransitionReason.SEEK_TO_ANOTHER_AUDIO_ITEM(oldPosition)
++                )
++            }
++
++            updateNotificationIfNecessary()
++        }
++
++        /**
++         * Called when the value returned from Player.getPlayWhenReady() changes.
++         */
++        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
++            val pausedBecauseReachedEnd = reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM
++            playerEventHolder.updatePlayWhenReadyChange(PlayWhenReadyChangeData(playWhenReady, pausedBecauseReachedEnd))
++        }
++
++        /**
++         * The generic onEvents callback provides access to the Player object and specifies the set
++         * of events that occurred together. It’s always called after the callbacks that correspond
++         * to the individual events.
++         */
++        override fun onEvents(player: Player, events: Player.Events) {
++            // Note that it is necessary to set `playerState` in order, since each mutation fires an
++            // event.
++            for (i in 0 until events.size()) {
++                when (events[i]) {
++                    Player.EVENT_PLAYBACK_STATE_CHANGED -> {
++                        val state = when (player.playbackState) {
++                            Player.STATE_BUFFERING -> AudioPlayerState.BUFFERING
++                            Player.STATE_READY -> AudioPlayerState.READY
++                            Player.STATE_IDLE ->
++                                // Avoid transitioning to idle from error or stopped
++                                if (
++                                    playerState == AudioPlayerState.ERROR ||
++                                    playerState == AudioPlayerState.STOPPED
++                                )
++                                    null
++                                else
++                                    AudioPlayerState.IDLE
++                            Player.STATE_ENDED ->
++                                if (player.mediaItemCount > 0) AudioPlayerState.ENDED
++                                else AudioPlayerState.IDLE
++                            else -> null // noop
++                        }
++                        if (state != null && state != playerState) {
++                            playerState = state
++                        }
++                    }
++                    Player.EVENT_MEDIA_ITEM_TRANSITION -> {
++                        playbackError = null
++                        if (currentItem != null) {
++                            playerState = AudioPlayerState.LOADING
++                            if (isPlaying) {
++                                playerState = AudioPlayerState.READY
++                                playerState = AudioPlayerState.PLAYING
++                            }
++                        }
++                    }
++                    Player.EVENT_PLAY_WHEN_READY_CHANGED -> {
++                        if (!player.playWhenReady && playerState != AudioPlayerState.STOPPED) {
++                            playerState = AudioPlayerState.PAUSED
++                        }
++                    }
++                    Player.EVENT_IS_PLAYING_CHANGED -> {
++                        if (player.isPlaying) {
++                            playerState = AudioPlayerState.PLAYING
++                        }
++                    }
++                }
++            }
++        }
++
++        override fun onPlayerError(error: PlaybackException) {
++            val _playbackError = PlaybackError(
++                error.errorCodeName
++                    .replace("ERROR_CODE_", "")
++                    .lowercase(Locale.getDefault())
++                    .replace("_", "-"),
++                error.message
++            )
++            playerEventHolder.updatePlaybackError(_playbackError)
++            playbackError = _playbackError
++            playerState = AudioPlayerState.ERROR
++        }
++    }
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/QueuedAudioPlayer.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/QueuedAudioPlayer.kt
+new file mode 100644
+index 0000000..78a5b62
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/QueuedAudioPlayer.kt
+@@ -0,0 +1,255 @@
++package com.doublesymmetry.kotlinaudio.players
++
++import android.content.Context
++import com.doublesymmetry.kotlinaudio.models.*
++import com.doublesymmetry.kotlinaudio.players.components.getAudioItemHolder
++import com.google.android.exoplayer2.C
++import com.google.android.exoplayer2.IllegalSeekPositionException
++import com.google.android.exoplayer2.source.MediaSource
++import java.util.*
++import kotlin.math.max
++import kotlin.math.min
++
++class QueuedAudioPlayer(
++    context: Context,
++    playerConfig: PlayerConfig = PlayerConfig(),
++    bufferConfig: BufferConfig? = null,
++    cacheConfig: CacheConfig? = null
++) : BaseAudioPlayer(context, playerConfig, bufferConfig, cacheConfig) {
++    private val queue = LinkedList<MediaSource>()
++    override val playerOptions = DefaultQueuedPlayerOptions(exoPlayer)
++
++    val currentIndex
++        get() = exoPlayer.currentMediaItemIndex
++
++    override val currentItem: AudioItem?
++        get() = queue.getOrNull(currentIndex)?.mediaItem?.getAudioItemHolder()?.audioItem
++
++    val nextIndex: Int?
++        get() {
++            return if (exoPlayer.nextMediaItemIndex == C.INDEX_UNSET) null
++            else exoPlayer.nextMediaItemIndex
++        }
++
++    val previousIndex: Int?
++        get() {
++            return if (exoPlayer.previousMediaItemIndex == C.INDEX_UNSET) null
++            else exoPlayer.previousMediaItemIndex
++        }
++
++    val items: List<AudioItem>
++        get() = queue.map { it.mediaItem.getAudioItemHolder().audioItem }
++
++    val previousItems: List<AudioItem>
++        get() {
++            return if (queue.isEmpty()) emptyList()
++            else queue
++                .subList(0, exoPlayer.currentMediaItemIndex)
++                .map { it.mediaItem.getAudioItemHolder().audioItem }
++        }
++
++    val nextItems: List<AudioItem>
++        get() {
++            return if (queue.isEmpty()) emptyList()
++            else queue
++                .subList(exoPlayer.currentMediaItemIndex, queue.lastIndex)
++                .map { it.mediaItem.getAudioItemHolder().audioItem }
++        }
++
++    val nextItem: AudioItem?
++        get() = items.getOrNull(currentIndex + 1)
++
++    val previousItem: AudioItem?
++        get() = items.getOrNull(currentIndex - 1)
++
++    override fun load(item: AudioItem, playWhenReady: Boolean) {
++        load(item)
++        exoPlayer.playWhenReady = playWhenReady
++    }
++
++    override fun load(item: AudioItem) {
++        if (queue.isEmpty()) {
++            add(item)
++        } else {
++            val mediaSource = getMediaSourceFromAudioItem(item)
++            queue[currentIndex] = mediaSource
++            exoPlayer.addMediaSource(currentIndex + 1, mediaSource)
++            exoPlayer.removeMediaItem(currentIndex)
++            exoPlayer.seekTo(currentIndex, C.TIME_UNSET);
++            exoPlayer.prepare()
++        }
++    }
++
++    /**
++     * Add a single item to the queue. If the AudioPlayer has no item loaded, it will load the `item`.
++     * @param item The [AudioItem] to add.
++     */
++    fun add(item: AudioItem, playWhenReady: Boolean) {
++        exoPlayer.playWhenReady = playWhenReady
++        add(item)
++    }
++
++    /**
++     * Add a single item to the queue. If the AudioPlayer has no item loaded, it will load the `item`.
++     * @param item The [AudioItem] to add.
++     * @param playWhenReady Whether playback starts automatically.
++     */
++    fun add(item: AudioItem) {
++        val mediaSource = getMediaSourceFromAudioItem(item)
++        queue.add(mediaSource)
++        exoPlayer.addMediaSource(mediaSource)
++        exoPlayer.prepare()
++    }
++
++    /**
++     * Add multiple items to the queue. If the AudioPlayer has no item loaded, it will load the first item in the list.
++     * @param items The [AudioItem]s to add.
++     * @param playWhenReady Whether playback starts automatically.
++     */
++    fun add(items: List<AudioItem>, playWhenReady: Boolean) {
++        exoPlayer.playWhenReady = playWhenReady
++        add(items)
++    }
++
++    /**
++     * Add multiple items to the queue. If the AudioPlayer has no item loaded, it will load the first item in the list.
++     * @param items The [AudioItem]s to add.
++     */
++    fun add(items: List<AudioItem>) {
++        val mediaSources = items.map { getMediaSourceFromAudioItem(it) }
++        queue.addAll(mediaSources)
++        exoPlayer.addMediaSources(mediaSources)
++        exoPlayer.prepare()
++    }
++
++
++    /**
++     * Add multiple items to the queue.
++     * @param items The [AudioItem]s to add.
++     * @param atIndex  Index to insert items at, if no items loaded this will not automatically start playback.
++     */
++    fun add(items: List<AudioItem>, atIndex: Int) {
++        val mediaSources = items.map { getMediaSourceFromAudioItem(it) }
++        queue.addAll(atIndex, mediaSources)
++        exoPlayer.addMediaSources(atIndex, mediaSources)
++        exoPlayer.prepare()
++    }
++
++    /**
++     * Remove an item from the queue.
++     * @param index The index of the item to remove.
++     */
++    fun remove(index: Int) {
++        queue.removeAt(index)
++        exoPlayer.removeMediaItem(index)
++    }
++
++    /**
++     * Remove items from the queue.
++     * @param indexes The indexes of the items to remove.
++     */
++    fun remove(indexes: List<Int>) {
++        val sorted = indexes.toMutableList()
++        // Sort the indexes in descending order so we can safely remove them one by one
++        // without having the next index possibly newly pointing to another item than intended:
++        sorted.sortDescending()
++        sorted.forEach {
++            remove(it)
++        }
++    }
++
++    /**
++     * Skip to the next item in the queue, which may depend on the current repeat mode.
++     * Does nothing if there is no next item to skip to.
++     */
++    fun next() {
++        exoPlayer.seekToNextMediaItem()
++        exoPlayer.prepare()
++    }
++
++    /**
++     * Skip to the previous item in the queue, which may depend on the current repeat mode.
++     * Does nothing if there is no previous item to skip to.
++     */
++    fun previous() {
++        exoPlayer.seekToPreviousMediaItem()
++        exoPlayer.prepare()
++    }
++
++    /**
++     * Move an item in the queue from one position to another.
++     * @param fromIndex The index of the item ot move.
++     * @param toIndex The index to move the item to. If the index is larger than the size of the queue, the item is moved to the end of the queue instead.
++     */
++    fun move(fromIndex: Int, toIndex: Int) {
++        exoPlayer.moveMediaItem(fromIndex, toIndex)
++        val item = queue[fromIndex]
++        queue.removeAt(fromIndex)
++        queue.add(max(0, min(items.size, if (toIndex > fromIndex) toIndex else toIndex - 1)), item)
++    }
++
++    /**
++     * Jump to an item in the queue.
++     * @param index the index to jump to
++     * @param playWhenReady Whether playback starts automatically.
++     */
++    fun jumpToItem(index: Int, playWhenReady: Boolean) {
++        exoPlayer.playWhenReady = playWhenReady
++        jumpToItem(index)
++    }
++
++    /**
++     * Jump to an item in the queue.
++     * @param index the index to jump to
++     */
++    fun jumpToItem(index: Int) {
++        try {
++            exoPlayer.seekTo(index, C.TIME_UNSET)
++            exoPlayer.prepare()
++        } catch (e: IllegalSeekPositionException) {
++            throw Error("This item index $index does not exist. The size of the queue is ${queue.size} items.")
++        }
++    }
++
++    /**
++     * Replaces item at index in queue.
++     * If updating current index, we update the notification metadata if [automaticallyUpdateNotificationMetadata] is true.
++     */
++    fun replaceItem(index: Int, item: AudioItem) {
++        val mediaSource = getMediaSourceFromAudioItem(item)
++        queue[index] = mediaSource
++        if (index == currentIndex) {
++            updateNotificationIfNecessary(overrideAudioItem = item)
++        }
++    }
++
++    /**
++     * Removes all the upcoming items, if any (the ones returned by [next]).
++     */
++    fun removeUpcomingItems() {
++        if (queue.lastIndex == -1 || currentIndex == -1) return
++        val lastIndex = queue.lastIndex + 1
++        val fromIndex = currentIndex + 1
++
++        exoPlayer.removeMediaItems(fromIndex, lastIndex)
++        queue.subList(fromIndex, lastIndex).clear()
++    }
++
++    /**
++     * Removes all the previous items, if any (the ones returned by [previous]).
++     */
++    fun removePreviousItems() {
++        exoPlayer.removeMediaItems(0, currentIndex)
++        queue.subList(0, currentIndex).clear()
++    }
++
++    override fun destroy() {
++        queue.clear()
++        super.destroy()
++    }
++
++    override fun clear() {
++        queue.clear()
++        super.clear()
++    }
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/components/MediaItemExt.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/components/MediaItemExt.kt
+new file mode 100644
+index 0000000..f7a8570
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/components/MediaItemExt.kt
+@@ -0,0 +1,8 @@
++package com.doublesymmetry.kotlinaudio.players.components
++
++import com.doublesymmetry.kotlinaudio.models.AudioItemHolder
++import com.google.android.exoplayer2.MediaItem
++
++fun MediaItem.getAudioItemHolder(): AudioItemHolder {
++    return localConfiguration!!.tag as AudioItemHolder
++}
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/components/PlayerCache.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/components/PlayerCache.kt
+new file mode 100644
+index 0000000..e502d26
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/players/components/PlayerCache.kt
+@@ -0,0 +1,26 @@
++package com.doublesymmetry.kotlinaudio.players.components
++
++import android.content.Context
++import com.doublesymmetry.kotlinaudio.models.CacheConfig
++import com.google.android.exoplayer2.database.DatabaseProvider
++import com.google.android.exoplayer2.database.StandaloneDatabaseProvider
++import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor
++import com.google.android.exoplayer2.upstream.cache.SimpleCache
++import java.io.File
++
++object PlayerCache {
++    @Volatile
++    private var instance: SimpleCache? = null
++
++    fun getInstance(context: Context, cacheConfig: CacheConfig): SimpleCache? {
++        val cacheDir = File(context.cacheDir, cacheConfig.identifier)
++        val db: DatabaseProvider = StandaloneDatabaseProvider(context)
++
++        instance ?: synchronized(this) {
++            instance ?: SimpleCache(cacheDir, LeastRecentlyUsedCacheEvictor(cacheConfig.maxCacheSize ?: 0), db)
++                .also { instance = it }
++        }
++
++        return instance
++    }
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/utils/Utils.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/utils/Utils.kt
+new file mode 100644
+index 0000000..c6f0ced
+--- /dev/null
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/kotlinaudio/utils/Utils.kt
+@@ -0,0 +1,16 @@
++package com.doublesymmetry.kotlinaudio.utils
++
++import android.content.ContentResolver
++import android.net.Uri
++import com.google.android.exoplayer2.upstream.RawResourceDataSource
++
++fun isUriLocalFile(uri: Uri?): Boolean {
++    if (uri == null) return false
++    val scheme = uri.scheme
++    val host = uri.host
++    if((scheme == "http" || scheme == "https") && (host == "localhost" || host == "127.0.0.1" || host == "[::1]"))
++    {
++        return false
++    }
++    return scheme == null || scheme == ContentResolver.SCHEME_FILE || scheme == ContentResolver.SCHEME_ANDROID_RESOURCE || scheme == ContentResolver.SCHEME_CONTENT || scheme == RawResourceDataSource.RAW_RESOURCE_SCHEME || scheme == "res" || host == null
++}
+\ No newline at end of file
 diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
 index b2409a0..92b7130 100644
 --- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt
@@ -825,3 +3143,16 @@ index b2409a0..92b7130 100644
          callback.resolve(Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state)))
      }
  }
+diff --git a/node_modules/react-native-track-player/android/src/main/res/values/strings.xml b/node_modules/react-native-track-player/android/src/main/res/values/strings.xml
+index d37ddd3..9a49ae2 100644
+--- a/node_modules/react-native-track-player/android/src/main/res/values/strings.xml
++++ b/node_modules/react-native-track-player/android/src/main/res/values/strings.xml
+@@ -1,4 +1,7 @@
+ <resources>
+     <string name="rntp_temporary_channel_id">rntp_temporary_channel</string>
+     <string name="rntp_temporary_channel_name">temporary_channel</string>
++    <string name="play">Play</string>
++    <string name="playback_channel_name">Now Playing</string>
++    <string name="pause">Pause</string>
+ </resources>
+\ No newline at end of file
