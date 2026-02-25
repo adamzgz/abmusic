@@ -1,0 +1,295 @@
+import React, { useRef, useCallback, useEffect } from 'react';
+import { View } from 'react-native';
+import { WebView } from 'react-native-webview';
+import { PO_TOKEN_HTML } from './potoken-html';
+import { fetchChallenge, fetchIntegrityToken } from './potoken-service';
+
+// --- Module-level state (singleton) ---
+
+type PendingMint = { resolve: (t: string) => void; reject: (e: Error) => void };
+
+let _integrityToken: any = null;
+let _webViewRef: WebView | null = null;
+let _pendingMints = new Map<string, PendingMint>();
+let _initResolve: (() => void) | null = null;
+let _initPromise: Promise<void> | null = null;
+let _initialized = false;
+
+function resetInit() {
+  _initialized = false;
+  _integrityToken = null;
+  _initPromise = new Promise<void>((resolve) => {
+    _initResolve = resolve;
+  });
+}
+
+resetInit();
+
+// --- Public API ---
+
+export async function mintPoToken(identifier: string): Promise<string> {
+  if (_initPromise) await _initPromise;
+  if (!_initialized || !_integrityToken || !_webViewRef) {
+    throw new Error('PoToken system not initialized');
+  }
+
+  const mintId = Math.random().toString(36).slice(2);
+
+  return new Promise<string>((resolve, reject) => {
+    _pendingMints.set(mintId, { resolve, reject });
+
+    // Use injectJavaScript instead of postMessage (more reliable)
+    const js = `
+      (function() {
+        try {
+          mintToken(window._wps, ${JSON.stringify(_integrityToken)}, ${JSON.stringify(identifier)})
+            .then(function(token) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'MINT_OK', mintId: ${JSON.stringify(mintId)}, poToken: token
+              }));
+            })
+            .catch(function(err) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'MINT_ERROR', mintId: ${JSON.stringify(mintId)}, error: String(err.message || err)
+              }));
+            });
+        } catch(e) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'MINT_ERROR', mintId: ${JSON.stringify(mintId)}, error: String(e.message || e)
+          }));
+        }
+      })(); true;
+    `;
+    _webViewRef!.injectJavaScript(js);
+
+    setTimeout(() => {
+      if (_pendingMints.has(mintId)) {
+        _pendingMints.delete(mintId);
+        reject(new Error('Mint timeout (10s)'));
+      }
+    }, 10000);
+  });
+}
+
+export function isPoTokenReady(): boolean {
+  return _initialized;
+}
+
+// --- YouTube API call via WebView (Chrome TLS stack) ---
+// YouTube blocks API calls from OkHttp/RN fetch due to TLS fingerprinting.
+// By making the call from the WebView, we use Chrome's real TLS stack.
+
+type PendingApiCall = { resolve: (data: any) => void; reject: (e: Error) => void };
+let _pendingApiCalls = new Map<string, PendingApiCall>();
+
+let _cookiesEstablished = false;
+
+export async function youtubeApiCallViaWebView(
+  endpoint: string,
+  body: any,
+  headers: Record<string, string> = {},
+): Promise<any> {
+  if (!_webViewRef) throw new Error('WebView not ready');
+
+  const callId = Math.random().toString(36).slice(2);
+
+  return new Promise<any>((resolve, reject) => {
+    _pendingApiCalls.set(callId, { resolve, reject });
+
+    // First establish YouTube cookies if not done yet, then make the API call.
+    // The cookie fetch visits youtube.com which sets CONSENT, VISITOR_INFO, etc.
+    const apiCallJs = `
+      fetch(${JSON.stringify(endpoint)}, {
+        method: 'POST',
+        headers: ${JSON.stringify({ 'Content-Type': 'application/json', ...headers })},
+        body: ${JSON.stringify(JSON.stringify(body))},
+        credentials: 'include',
+      })
+        .then(function(r) {
+          if (!r.ok) {
+            return r.text().then(function(t) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'API_CALL', callId: ${JSON.stringify(callId)},
+                error: 'HTTP ' + r.status + ': ' + t.substring(0, 500)
+              }));
+            });
+          }
+          return r.json().then(function(data) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'API_CALL', callId: ${JSON.stringify(callId)},
+              data: data
+            }));
+          });
+        })
+        .catch(function(e) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'API_CALL', callId: ${JSON.stringify(callId)},
+            error: String(e.message || e)
+          }));
+        });
+    `;
+
+    const js = _cookiesEstablished ? `(function() { ${apiCallJs} })(); true;` : `
+      (function() {
+        // First visit youtube.com to establish session cookies
+        fetch('https://www.youtube.com/', { credentials: 'include' })
+          .then(function() {
+            ${apiCallJs}
+          })
+          .catch(function() {
+            // Even if the cookie fetch fails, try the API call anyway
+            ${apiCallJs}
+          });
+      })(); true;
+    `;
+
+    _webViewRef!.injectJavaScript(js);
+    _cookiesEstablished = true;
+
+    setTimeout(() => {
+      if (_pendingApiCalls.has(callId)) {
+        _pendingApiCalls.delete(callId);
+        reject(new Error('API call timeout (15s)'));
+      }
+    }, 15000);
+  });
+}
+
+// --- React component (hidden WebView) ---
+
+export function PoTokenProvider() {
+  const webViewRef = useRef<WebView>(null);
+
+  useEffect(() => {
+    return () => {
+      _webViewRef = null;
+      resetInit();
+    };
+  }, []);
+
+  const startBotGuard = useCallback(async () => {
+    if (__DEV__) console.log('[potoken] WebView loaded, starting BotGuard...');
+
+    try {
+      const challenge = await fetchChallenge();
+
+      if (__DEV__) console.log('[potoken] sending challenge to WebView, jsLen:', challenge.interpreterJavascript.length);
+
+      // Inject the challenge data and run BotGuard via injectJavaScript
+      const js = `
+        (function() {
+          try {
+            var challengeData = ${JSON.stringify(challenge)};
+            runBotGuard(challengeData)
+              .then(function(result) {
+                window._wps = result.webPoSignalOutput;
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'BOTGUARD_OK',
+                  botguardResponse: result.botguardResponse
+                }));
+              })
+              .catch(function(err) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'BOTGUARD_ERROR',
+                  error: String(err.message || err)
+                }));
+              });
+          } catch(e) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'BOTGUARD_ERROR',
+              error: 'inject: ' + String(e.message || e)
+            }));
+          }
+        })(); true;
+      `;
+      webViewRef.current?.injectJavaScript(js);
+    } catch (e: any) {
+      console.error('[potoken] challenge fetch failed:', e?.message);
+    }
+  }, []);
+
+  const onMessage = useCallback(async (event: any) => {
+    let data: any;
+    try {
+      data = JSON.parse(event.nativeEvent.data);
+    } catch {
+      return;
+    }
+
+    if (__DEV__) console.log('[potoken] msg:', data.type, data.error ?? '');
+
+    switch (data.type) {
+      case 'BOTGUARD_OK': {
+        try {
+          if (__DEV__) console.log('[potoken] BotGuard OK, fetching integrity token...');
+          const token = await fetchIntegrityToken(data.botguardResponse);
+          _integrityToken = token;
+          _initialized = true;
+          _initResolve?.();
+          if (__DEV__) console.log('[potoken] READY — can mint tokens');
+        } catch (e: any) {
+          console.error('[potoken] integrity token failed:', e?.message);
+        }
+        break;
+      }
+
+      case 'BOTGUARD_ERROR': {
+        console.error('[potoken] BotGuard error:', data.error);
+        break;
+      }
+
+      case 'MINT_OK': {
+        const pending = _pendingMints.get(data.mintId);
+        if (pending) {
+          _pendingMints.delete(data.mintId);
+          pending.resolve(data.poToken);
+          if (__DEV__) console.log('[potoken] minted token, length:', data.poToken?.length);
+        }
+        break;
+      }
+
+      case 'MINT_ERROR': {
+        const pending = _pendingMints.get(data.mintId);
+        if (pending) {
+          _pendingMints.delete(data.mintId);
+          pending.reject(new Error(data.error));
+        } else {
+          console.error('[potoken] mint error (no pending):', data.error);
+        }
+        break;
+      }
+
+      case 'API_CALL': {
+        const call = _pendingApiCalls.get(data.callId);
+        if (call) {
+          _pendingApiCalls.delete(data.callId);
+          if (data.error) {
+            call.reject(new Error(data.error));
+          } else {
+            call.resolve(data.data);
+          }
+        }
+        break;
+      }
+    }
+  }, []);
+
+  return (
+    <View style={{ width: 0, height: 0, position: 'absolute', opacity: 0 }}>
+      <WebView
+        ref={(ref) => {
+          (webViewRef as any).current = ref;
+          _webViewRef = ref;
+        }}
+        source={{ html: PO_TOKEN_HTML, baseUrl: 'https://www.youtube.com' }}
+        originWhitelist={['*']}
+        javaScriptEnabled
+        onMessage={onMessage}
+        onLoadEnd={startBotGuard}
+        userAgent="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+        thirdPartyCookiesEnabled
+        sharedCookiesEnabled
+      />
+    </View>
+  );
+}
