@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SonicFlow is a YouTube Music streaming app built with Expo SDK 54 + React Native (Hermes engine). It uses youtubei.js for search/browse and a local yt-dlp proxy server for stream URL resolution, with react-native-track-player for background audio playback.
+SonicFlow is a YouTube Music streaming app built with Expo SDK 54 + React Native (Hermes engine). It uses youtubei.js for search/browse and an on-device InnerTube VR client (via WebView with Chrome TLS) for stream URL resolution, with react-native-track-player for background audio playback.
 
 **Current status:** Phase 2 (MVP) in progress. Core playback pipeline working (search → stream resolution → audio playback → MiniPlayer).
+
+**Fully serverless** — no backend or proxy server required.
 
 ## Commands
 
@@ -19,11 +21,6 @@ cd sonicflow && npx expo run:android
 
 # iOS dev build
 cd sonicflow && npx expo run:ios
-
-# Stream server (REQUIRED for audio playback in dev)
-cd sonicflow && python stream-server.py
-# Runs on port 3333. Emulator connects via http://10.0.2.2:3333
-# Requires: pip install yt-dlp
 
 # Install dependencies (--legacy-peer-deps required due to React 19.1 vs 19.2 peer conflict)
 cd sonicflow && npm install --legacy-peer-deps
@@ -45,7 +42,7 @@ expo-router with file-based routing from `src/app/`. Three-tab layout: Home, Sea
 ### Data Flow
 ```
 Search/Browse: youtubei.js (ANDROID client) → MusicTrack → Zustand store → UI
-Stream URLs:   App → stream-server.py (yt-dlp on host) → googlevideo.com URL → ExoPlayer
+Stream URLs:   InnerTube VR client (WebView, Chrome TLS) → pre-auth googlevideo.com URL → ExoPlayer
 Playback:      resolveForPlayback() → TrackPlayer.add({ url }) → ExoPlayer → audio output
 ```
 
@@ -55,25 +52,22 @@ The logical queue (metadata in Zustand `playerStore`) is separate from the physi
 
 **YouTube blocks ALL stream URL fetches from non-browser HTTP clients.** This was the #1 blocker during development. See RESEARCH.md §9 for the full investigation.
 
-Current architecture:
+Current architecture (serverless):
 - **Search/browse:** youtubei.js works fine for metadata (search, getInfo, getArtist, etc.)
-- **Stream URLs:** Resolved via a local proxy server (`stream-server.py`) that runs yt-dlp on the host machine
-- **Why:** YouTube's CDN rejects requests from OkHttp/ExoPlayer/RN fetch with HTTP 403, regardless of headers, PO tokens, or client type
-- **Dev flow:** Emulator connects to host via `http://10.0.2.2:3333/stream/{videoId}`
-- **TODO:** Production needs a cloud proxy or on-device alternative
+- **Stream URLs:** Resolved on-device via InnerTube `android_vr` client using a hidden WebView (Chrome TLS fingerprint). Returns pre-authenticated URLs — no signature deciphering needed.
+- **Playback:** Cronet (Chrome's network stack) integrated into ExoPlayer via patch-package, so audio fetches also use Chrome TLS.
+- **Why WebView:** YouTube's CDN rejects requests from OkHttp/ExoPlayer/RN fetch with HTTP 403 via TLS fingerprinting. WebView uses Chrome's TLS stack, which YouTube trusts.
 
 Key files:
-- `stream-server.py` — Python HTTP server wrapping yt-dlp (runs on host)
-- `src/features/youtube/android-vr-client.ts` — Client that calls the proxy
-- `src/features/player/playTrack.ts` — Orchestrates: offline cache → proxy → TrackPlayer
+- `src/features/youtube/innertube-vr.ts` — InnerTube VR client (WebView-based, Chrome TLS)
+- `src/features/player/playTrack.ts` — Orchestrates: offline cache → VR direct → TrackPlayer
 
 ### Key Patterns
 
-- **Rolling queue:** Only 2 tracks ahead are pre-resolved into TrackPlayer. YouTube stream URLs expire after ~6 hours, so URLs are resolved just-in-time via the proxy server.
+- **Rolling queue:** Only 2 tracks ahead are pre-resolved into TrackPlayer. YouTube stream URLs expire after ~6 hours, so URLs are resolved just-in-time.
 - **Innertube singleton:** `features/youtube/client.ts` lazy-initializes one Innertube instance (ANDROID client) with session caching via react-native-mmkv. Used for search/browse only, NOT for stream URLs.
-- **Rate limiting:** `playTrack.ts` enforces 1.5s minimum gap between stream requests to avoid hitting yt-dlp too fast.
 - **Strategy pattern for radio:** `features/radio/engine.ts` accepts any `RadioStrategy` implementation. First strategy is `artistRadio` using YouTube's Up Next.
-- **Audio format:** yt-dlp selects `bestaudio[ext=m4a]/bestaudio` — typically AAC in M4A container.
+- **Audio format:** Typically Opus in WebM or AAC in M4A, selected by itag based on quality setting.
 
 ### State Management
 Three Zustand stores in `src/core/store/`:
@@ -96,12 +90,10 @@ Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: 
 
 ## Known Issues
 
-- **YouTube 403 on stream URLs:** YouTube CDN blocks all stream URL requests from OkHttp/ExoPlayer via TLS fingerprinting. This is why we use the yt-dlp proxy server. See RESEARCH.md §9.
-- **Pre-resolve JSON parse error:** Occasionally yt-dlp returns an incomplete response for some videos, causing "JSON Parse error: Unexpected end of input" during pre-resolve of next tracks. Non-blocking — current track plays fine.
+- **YouTube 403 on stream URLs:** YouTube CDN blocks all stream URL requests from OkHttp/ExoPlayer via TLS fingerprinting. Solved with WebView (VR client) + Cronet (ExoPlayer). See RESEARCH.md §9.
 - `Innertube.create()` can freeze UI for 10+ seconds on first run (CPU-intensive JS parsing in Hermes)
 - react-native-track-player requires dev-client builds — **does not work with Expo Go**
 - `--legacy-peer-deps` needed for npm install
-- `stream-server.py` must be running on host for audio playback during development
 
 ## Project Spec & Research
 

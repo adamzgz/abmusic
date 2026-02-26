@@ -1,8 +1,9 @@
 import { File, Directory, Paths } from 'expo-file-system';
-import { getStreamUrl } from '@/features/youtube/streams';
+import { getStreamViaInnertubeVR } from '@/features/youtube/innertube-vr';
+import { downloadWithCronet } from 'cronet-download';
 import { useSettingsStore } from '@/core/store/settingsStore';
 import { saveCachedAudio, getCachedAudio, removeCachedAudio } from './offlineDb';
-import type { MusicTrack } from '@/features/youtube/types';
+import type { MusicTrack, StreamInfo } from '@/features/youtube/types';
 
 const AUDIO_DIR_NAME = 'audio';
 
@@ -54,6 +55,14 @@ export async function getOfflineUrl(trackId: string): Promise<string | null> {
   return cached.filePath;
 }
 
+// Resolve stream URL via InnerTube VR (WebView, Chrome TLS)
+async function resolveStreamForDownload(trackId: string): Promise<StreamInfo> {
+  const quality = useSettingsStore.getState().audioQuality;
+  const stream = await getStreamViaInnertubeVR(trackId, quality);
+  if (__DEV__) console.log('[download] VR resolved, itag:', stream.itag);
+  return stream;
+}
+
 export async function downloadTrack(track: MusicTrack): Promise<void> {
   if (activeDownloads.has(track.id)) return;
   if (await isDownloaded(track.id)) return;
@@ -64,34 +73,49 @@ export async function downloadTrack(track: MusicTrack): Promise<void> {
     audioDir.create();
   }
 
-  const quality = useSettingsStore.getState().audioQuality;
-  const stream = await getStreamUrl(track.id, quality);
-  const ext = stream.mimeType.includes('webm') ? 'webm' : 'm4a';
-  const fileName = `${track.id}.${ext}`;
-
   activeDownloads.add(track.id);
   const cb = progressListeners.get(track.id);
-  cb?.({ trackId: track.id, progress: 0.1, status: 'downloading' });
+  cb?.({ trackId: track.id, progress: 0.05, status: 'downloading' });
 
   try {
-    const downloadedFile = await File.downloadFileAsync(
-      stream.url,
-      new File(audioDir, fileName),
-      { idempotent: true }
+    // Resolve stream URL (same chain as playback)
+    const stream = await resolveStreamForDownload(track.id);
+    cb?.({ trackId: track.id, progress: 0.1, status: 'downloading' });
+
+    const ext = stream.mimeType.includes('webm') ? 'webm' : 'm4a';
+    const fileName = `${track.id}.${ext}`;
+    // audioDir.uri is file:///data/... — Cronet needs a plain absolute path
+    const dirPath = audioDir.uri.replace(/^file:\/\//, '').replace(/\/+$/, '');
+    const destPath = `${dirPath}/${fileName}`;
+
+    if (__DEV__) console.log('[download] Cronet downloading to:', destPath);
+
+    // Download using Cronet (Chrome TLS) — bypasses YouTube CDN blocking
+    const result = await downloadWithCronet(stream.url, destPath);
+
+    if (__DEV__) console.log('[download] complete:', result.bytesWritten, 'bytes');
+
+    // Store as file:// URI for TrackPlayer compatibility
+    const filePath = result.path.startsWith('file://') ? result.path : `file://${result.path}`;
+    await saveCachedAudio(
+      track,
+      filePath,
+      result.bytesWritten,
+      stream.mimeType,
+      stream.bitrate,
     );
-
-    const fileSize = downloadedFile.size ?? 0;
-    const filePath = downloadedFile.uri;
-
-    await saveCachedAudio(track, filePath, fileSize, stream.mimeType, stream.bitrate);
 
     cb?.({ trackId: track.id, progress: 1, status: 'complete' });
   } catch (err) {
     cb?.({ trackId: track.id, progress: 0, status: 'error' });
+    if (__DEV__) console.error('[download] failed:', err);
     // Clean up partial file
     try {
-      const partialFile = new File(audioDir, fileName);
+      const ext = 'm4a'; // best guess for cleanup
+      const partialFile = new File(audioDir, `${track.id}.${ext}`);
       if (partialFile.exists) partialFile.delete();
+      const partialWebm = new File(audioDir, `${track.id}.webm`);
+      if (partialWebm.exists) partialWebm.delete();
     } catch {}
     throw err;
   } finally {

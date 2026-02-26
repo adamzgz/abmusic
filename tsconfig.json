@@ -6,6 +6,9 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "cronet-download": [
+        "modules/cronet-download/src/index"
       ]
     }
   },

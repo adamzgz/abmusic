@@ -41,7 +41,8 @@
     "text-encoding-polyfill": "^0.6.7",
     "web-streams-polyfill": "^4.2.0",
     "youtubei.js": "^16.0.1",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "cronet-download": "file:./modules/cronet-download"
   },
   "devDependencies": {
     "@babel/plugin-syntax-import-attributes": "^7.28.6",

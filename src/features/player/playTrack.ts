@@ -1,45 +1,24 @@
 import TrackPlayer from 'react-native-track-player';
 import { getStreamViaInnertubeVR } from '@/features/youtube/innertube-vr';
-import { getStreamViaAndroidVR } from '@/features/youtube/android-vr-client';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { useSettingsStore } from '@/core/store/settingsStore';
 import { addToHistory } from '@/features/library/history';
 import { getOfflineUrl } from '@/features/cache/offlineCache';
 import type { MusicTrack } from '@/features/youtube/types';
 
-// Resolve a playable URL: offline cache → VR direct → proxy fallback.
+// Resolve a playable URL: offline cache → InnerTube VR (WebView).
 async function resolveForPlayback(trackId: string): Promise<string> {
   const offlineUrl = await getOfflineUrl(trackId);
   if (offlineUrl) return offlineUrl;
 
   const quality = useSettingsStore.getState().audioQuality;
 
-  // Strategy 1: android_vr InnerTube client via WebView (Chrome TLS)
+  // InnerTube android_vr client via WebView (Chrome TLS)
   // Returns pre-authenticated URLs — no decipher/sig transform needed.
-  // Timeout after 8s to fall back to proxy quickly.
-  try {
-    const vrPromise = getStreamViaInnertubeVR(trackId, quality);
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('VR timeout')), 8000)
-    );
-    const stream = await Promise.race([vrPromise, timeoutPromise]);
-    if (__DEV__) {
-      console.log('[resolve] VR DIRECT url length:', stream.url.length,
-        'itag:', stream.itag, 'mime:', stream.mimeType);
-    }
-    return stream.url;
-  } catch (e: any) {
-    if (__DEV__) {
-      console.warn('[resolve] VR direct failed:', e?.message);
-      console.log('[resolve] Falling back to yt-dlp proxy...');
-    }
-  }
-
-  // Strategy 2: Fallback to yt-dlp proxy server (dev/backup)
-  if (__DEV__) console.log('[resolve] Trying proxy for:', trackId);
-  const stream = await getStreamViaAndroidVR(trackId, quality);
+  const stream = await getStreamViaInnertubeVR(trackId, quality);
   if (__DEV__) {
-    console.log('[resolve] PROXY url length:', stream.url.length);
+    console.log('[resolve] VR url length:', stream.url.length,
+      'itag:', stream.itag, 'mime:', stream.mimeType);
   }
   return stream.url;
 }

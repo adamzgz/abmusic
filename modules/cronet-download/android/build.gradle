@@ -1,0 +1,35 @@
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+group = 'com.sonicflow.cronetdownload'
+version = '1.0.0'
+
+android {
+  namespace "com.sonicflow.cronetdownload"
+  compileSdkVersion safeExtGet("compileSdkVersion", 35)
+
+  defaultConfig {
+    minSdkVersion safeExtGet("minSdkVersion", 24)
+    targetSdkVersion safeExtGet("targetSdkVersion", 35)
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  implementation 'org.chromium.net:cronet-embedded:119.6045.31'
+  implementation 'com.google.android.gms:play-services-cronet:18.1.0'
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+}
+
+def safeExtGet(prop, fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
