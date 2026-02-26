@@ -23,6 +23,25 @@ async function resolveForPlayback(trackId: string): Promise<string> {
   return stream.url;
 }
 
+// Play a track without resetting the logical queue (used by skip next/prev)
+export async function playTrackDirect(track: MusicTrack) {
+  if (__DEV__) console.log('[playTrack] direct resolving:', track.id);
+  const url = await resolveForPlayback(track.id);
+  if (__DEV__) console.log('[playTrack] direct playing:', track.id);
+
+  await TrackPlayer.reset();
+  await TrackPlayer.add({
+    id: track.id,
+    url,
+    title: track.title,
+    artist: track.artist,
+    artwork: track.thumbnail || undefined,
+    duration: track.duration,
+  });
+  await TrackPlayer.play();
+  addToHistory(track).catch(() => {});
+}
+
 // Play a single track
 export async function playTrack(track: MusicTrack) {
   if (__DEV__) console.log('[playTrack] resolving:', track.id);
@@ -67,6 +86,15 @@ export async function playTracks(tracks: MusicTrack[], startIndex = 0) {
   usePlayerStore.getState().setQueue(tracks, startIndex);
 
   preResolveNext(tracks, startIndex + 1).catch(() => {});
+}
+
+// Pre-resolve upcoming tracks from the Zustand queue into the native TP queue.
+// Called after a Zustand-fallback skip so that native skipToNext works for subsequent skips.
+export async function preResolveFromQueue(fromIndex: number) {
+  const { usePlayerStore } = await import('@/core/store/playerStore');
+  const { queue } = usePlayerStore.getState();
+  if (fromIndex >= queue.length) return;
+  await preResolveNext(queue, fromIndex);
 }
 
 async function preResolveNext(tracks: MusicTrack[], fromIndex: number) {

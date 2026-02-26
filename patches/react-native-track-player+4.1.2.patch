@@ -3143,6 +3143,60 @@ index b2409a0..92b7130 100644
          callback.resolve(Arguments.fromBundle(musicService.getPlayerStateBundle(musicService.state)))
      }
  }
+diff --git a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
+index afa6b0f..ac20b1f 100644
+--- a/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
++++ b/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt
+@@ -634,6 +634,11 @@ class MusicService : HeadlessJsTaskService() {
+             }
+         }
+ 
++        // Handle external media session actions (notification, headset buttons, etc.)
++        // IMPORTANT: Execute actions directly on the native player AND emit events to JS.
++        // The patched ExoPlayer/Cronet build doesn't reliably deliver events to JS,
++        // so we must execute play/pause/stop/seek/next/previous at the native level
++        // to ensure notification controls always work. JS is still notified for UI sync.
+         scope.launch {
+             event.onPlayerActionTriggeredExternally.collect {
+                 when (it) {
+@@ -644,16 +649,32 @@ class MusicService : HeadlessJsTaskService() {
+                         }
+                     }
+                     is MediaSessionCallback.SEEK -> {
++                        player.seek(it.positionMs, TimeUnit.MILLISECONDS)
+                         Bundle().apply {
+                             putDouble("position", it.positionMs.toSeconds())
+                             emit(MusicEvents.BUTTON_SEEK_TO, this)
+                         }
+                     }
+-                    MediaSessionCallback.PLAY -> emit(MusicEvents.BUTTON_PLAY)
+-                    MediaSessionCallback.PAUSE -> emit(MusicEvents.BUTTON_PAUSE)
+-                    MediaSessionCallback.NEXT -> emit(MusicEvents.BUTTON_SKIP_NEXT)
+-                    MediaSessionCallback.PREVIOUS -> emit(MusicEvents.BUTTON_SKIP_PREVIOUS)
+-                    MediaSessionCallback.STOP -> emit(MusicEvents.BUTTON_STOP)
++                    MediaSessionCallback.PLAY -> {
++                        player.play()
++                        emit(MusicEvents.BUTTON_PLAY)
++                    }
++                    MediaSessionCallback.PAUSE -> {
++                        player.pause()
++                        emit(MusicEvents.BUTTON_PAUSE)
++                    }
++                    MediaSessionCallback.NEXT -> {
++                        player.next()
++                        emit(MusicEvents.BUTTON_SKIP_NEXT)
++                    }
++                    MediaSessionCallback.PREVIOUS -> {
++                        player.previous()
++                        emit(MusicEvents.BUTTON_SKIP_PREVIOUS)
++                    }
++                    MediaSessionCallback.STOP -> {
++                        player.stop()
++                        emit(MusicEvents.BUTTON_STOP)
++                    }
+                     MediaSessionCallback.FORWARD -> {
+                         Bundle().apply {
+                             val interval = latestOptions?.getDouble(FORWARD_JUMP_INTERVAL_KEY, DEFAULT_JUMP_INTERVAL) ?: DEFAULT_JUMP_INTERVAL
 diff --git a/node_modules/react-native-track-player/android/src/main/res/values/strings.xml b/node_modules/react-native-track-player/android/src/main/res/values/strings.xml
 index d37ddd3..9a49ae2 100644
 --- a/node_modules/react-native-track-player/android/src/main/res/values/strings.xml

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { getFavorites } from '@/features/library/favorites';
 import { getHistory, clearHistory, type HistoryEntry } from '@/features/library/history';
@@ -71,9 +71,12 @@ export default function LibraryScreen() {
     }
   }, [activeTab]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Reload data when tab comes into focus (e.g. after adding a favorite elsewhere)
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const onTrackPress = useCallback(async (track: MusicTrack) => {
     try {

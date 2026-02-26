@@ -8,8 +8,38 @@ export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
   TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
   TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.reset());
-  TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
-  TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
+  TrackPlayer.addEventListener(Event.RemoteNext, async () => {
+    try {
+      const queue = await TrackPlayer.getQueue();
+      const idx = await TrackPlayer.getActiveTrackIndex();
+      if (idx !== undefined && idx < queue.length - 1) {
+        await TrackPlayer.skipToNext();
+        const { usePlayerStore } = await import('@/core/store/playerStore');
+        const store = usePlayerStore.getState();
+        if (store.currentIndex < store.queue.length - 1) {
+          store.setCurrentIndex(store.currentIndex + 1);
+        }
+      }
+    } catch { /* ignore */ }
+  });
+  TrackPlayer.addEventListener(Event.RemotePrevious, async () => {
+    try {
+      const { position } = await TrackPlayer.getProgress();
+      if (position > 3) {
+        await TrackPlayer.seekTo(0);
+        return;
+      }
+      const idx = await TrackPlayer.getActiveTrackIndex();
+      if (idx !== undefined && idx > 0) {
+        await TrackPlayer.skipToPrevious();
+        const { usePlayerStore } = await import('@/core/store/playerStore');
+        const store = usePlayerStore.getState();
+        if (store.currentIndex > 0) {
+          store.setCurrentIndex(store.currentIndex - 1);
+        }
+      }
+    } catch { /* ignore */ }
+  });
   TrackPlayer.addEventListener(Event.RemoteSeek, (event) => {
     TrackPlayer.seekTo(event.position);
   });

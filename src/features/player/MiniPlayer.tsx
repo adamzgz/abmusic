@@ -12,7 +12,7 @@ import { spacing } from '@/theme/spacing';
 // Sticky bar at the bottom of the screen showing the current track.
 // Tapping it opens the full player modal.
 export function MiniPlayer() {
-  const { activeTrack, isPlaying, isBuffering, progress, togglePlayback, skipToNext } =
+  const { activeTrack, isPlaying, isBuffering, progress, togglePlayback, skipToNext, skipToPrevious } =
     usePlayer();
   const timerActive = useTimerStore((s) => s.isActive);
   const timerEndOfTrack = useTimerStore((s) => s.endOfTrack);
@@ -95,6 +95,16 @@ export function MiniPlayer() {
         <TouchableOpacity
           onPress={(e) => {
             e.stopPropagation();
+            skipToPrevious();
+          }}
+          style={styles.button}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="play-back" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
             togglePlayback();
           }}
           style={styles.button}
@@ -114,7 +124,7 @@ export function MiniPlayer() {
           style={styles.button}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="play-forward" size={22} color={colors.textSecondary} />
+          <Ionicons name="play-forward" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>

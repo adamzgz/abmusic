@@ -48,8 +48,10 @@ export function FullPlayer() {
   const [showQueue, setShowQueue] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekPosition, setSeekPosition] = useState(0);
-  const [shuffle, setShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
+  const shuffle = usePlayerStore((s) => s.shuffle);
+  const repeatMode = usePlayerStore((s) => s.repeatMode);
+  const setShuffle = usePlayerStore((s) => s.setShuffle);
+  const setRepeatMode = usePlayerStore((s) => s.setRepeatMode);
   const artworkColors = useDynamicColors(activeTrack?.artwork ?? undefined);
   const timerActive = useTimerStore((s) => s.isActive);
   const timerEndOfTrack = useTimerStore((s) => s.endOfTrack);
@@ -108,8 +110,9 @@ export function FullPlayer() {
   [progress.duration, seekPosition, seekTo]);
 
   const cycleRepeat = useCallback(() => {
-    setRepeatMode((m) => m === 'off' ? 'all' : m === 'all' ? 'one' : 'off');
-  }, []);
+    const next = repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off';
+    setRepeatMode(next);
+  }, [repeatMode, setRepeatMode]);
 
   if (!displayTrack) return null;
 
@@ -232,7 +235,7 @@ export function FullPlayer() {
 
       {/* Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity onPress={() => setShuffle(!shuffle)} style={styles.sideBtn}>
+        <TouchableOpacity onPress={() => setShuffle(!shuffle)} activeOpacity={0.7} style={styles.sideBtn}>
           <Ionicons
             name="shuffle"
             size={22}
@@ -254,7 +257,7 @@ export function FullPlayer() {
         </TouchableOpacity>
         <TouchableOpacity onPress={cycleRepeat} style={styles.sideBtn}>
           <Ionicons
-            name={repeatMode === 'one' ? 'repeat' : 'repeat'}
+            name="repeat"
             size={22}
             color={repeatMode !== 'off' ? colors.primary : colors.textTertiary}
           />
