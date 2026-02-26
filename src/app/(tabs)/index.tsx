@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   TextInput,
+  Image,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,7 @@ import { discoveryRadio } from '@/features/radio/strategies/discoveryRadio';
 import { mixRadio } from '@/features/radio/strategies/mixRadio';
 import { RadioPicker, type RadioType } from '@/features/radio/RadioPicker';
 import { TrackItem } from '@/components/TrackItem';
+import { TrackContextMenu } from '@/components/TrackContextMenu';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
@@ -32,6 +34,7 @@ export default function HomeScreen() {
   const [isLoadingRadio, setIsLoadingRadio] = useState(false);
   const [radioType, setRadioType] = useState<RadioType>('artist');
   const [genreInput, setGenreInput] = useState('');
+  const [contextTrack, setContextTrack] = useState<MusicTrack | null>(null);
   const currentTrackId = usePlayerStore((s) => s.queue[s.currentIndex]?.id);
 
   // Load recent history on mount
@@ -111,15 +114,21 @@ export default function HomeScreen() {
     return acc;
   }, []);
 
+  // Time-based greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
+        <Text style={styles.greeting}>{greeting}</Text>
         <Text style={styles.title}>SonicFlow</Text>
       </View>
 
       <FlatList
         data={[]}
         renderItem={null}
+        showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
             {/* Radio type picker */}
@@ -148,21 +157,27 @@ export default function HomeScreen() {
                     onPress={() => onStartRadio(track)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="radio" size={18} color={colors.primary} />
-                    <Text style={styles.quickTitle} numberOfLines={1}>
-                      {track.title}
-                    </Text>
-                    <Text style={styles.quickArtist} numberOfLines={1}>
-                      {track.artist}
-                    </Text>
+                    <Image
+                      source={{ uri: track.thumbnail }}
+                      style={styles.quickThumb}
+                    />
+                    <View style={styles.quickInfo}>
+                      <Text style={styles.quickTitle} numberOfLines={1}>
+                        {track.title}
+                      </Text>
+                      <Text style={styles.quickArtist} numberOfLines={1}>
+                        {track.artist}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
               {recentTracks.length === 0 && (
                 <View style={styles.emptyQuick}>
-                  <Ionicons name="radio-outline" size={32} color={colors.surfaceVariant} />
+                  <Ionicons name="radio-outline" size={40} color={colors.textTertiary} />
+                  <Text style={styles.emptyTitle}>Start listening</Text>
                   <Text style={styles.emptyText}>
-                    Search and play songs to see quick radio here
+                    Search for songs to build your radio
                   </Text>
                 </View>
               )}
@@ -192,6 +207,7 @@ export default function HomeScreen() {
                   key={track.id}
                   track={track}
                   onPress={onTrackPress}
+                  onLongPress={setContextTrack}
                   isPlaying={track.id === currentTrackId}
                 />
               ))}
@@ -199,6 +215,11 @@ export default function HomeScreen() {
           ) : null
         }
         contentContainerStyle={styles.listContent}
+      />
+      <TrackContextMenu
+        track={contextTrack}
+        visible={contextTrack !== null}
+        onClose={() => setContextTrack(null)}
       />
     </SafeAreaView>
   );
@@ -211,7 +232,14 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  greeting: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   title: {
     ...typography.h1,
@@ -232,9 +260,9 @@ const styles = StyleSheet.create({
   },
   genreInput: {
     backgroundColor: colors.surfaceVariant,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
     color: colors.text,
     fontSize: 14,
     marginHorizontal: spacing.lg,
@@ -248,23 +276,40 @@ const styles = StyleSheet.create({
   quickCard: {
     backgroundColor: colors.surfaceVariant,
     borderRadius: 10,
-    padding: spacing.md,
-    width: '47%',
-    gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    overflow: 'hidden',
+  },
+  quickThumb: {
+    width: 48,
+    height: 48,
+    backgroundColor: colors.surface,
+  },
+  quickInfo: {
+    flex: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   quickTitle: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   quickArtist: {
     color: colors.textSecondary,
     fontSize: 11,
+    marginTop: 1,
   },
   emptyQuick: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.xxl,
     gap: spacing.sm,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   emptyText: {
     ...typography.bodySmall,
@@ -286,6 +331,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   listContent: {
-    paddingBottom: 80,
+    paddingBottom: 120,
   },
 });

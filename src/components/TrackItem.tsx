@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { MusicTrack } from '@/features/youtube/types';
 import { DownloadButton } from './DownloadButton';
 import { formatTime } from '@/core/utils/formatTime';
@@ -8,18 +9,28 @@ import { spacing } from '@/theme/spacing';
 interface TrackItemProps {
   track: MusicTrack;
   onPress: (track: MusicTrack) => void;
+  onLongPress?: (track: MusicTrack) => void;
   isPlaying?: boolean;
   showDownload?: boolean;
 }
 
-export function TrackItem({ track, onPress, isPlaying, showDownload = true }: TrackItemProps) {
+export function TrackItem({ track, onPress, onLongPress, isPlaying, showDownload = true }: TrackItemProps) {
   return (
     <TouchableOpacity
       style={[styles.container, isPlaying && styles.playing]}
       onPress={() => onPress(track)}
-      activeOpacity={0.7}
+      onLongPress={() => onLongPress?.(track)}
+      delayLongPress={400}
+      activeOpacity={0.6}
     >
-      <Image source={{ uri: track.thumbnail }} style={styles.thumbnail} />
+      <View style={styles.thumbnailContainer}>
+        <Image source={{ uri: track.thumbnail }} style={styles.thumbnail} />
+        {isPlaying && (
+          <View style={styles.playingOverlay}>
+            <Ionicons name="musical-note" size={16} color="#fff" />
+          </View>
+        )}
+      </View>
       <View style={styles.info}>
         <Text
           style={[styles.title, isPlaying && styles.titlePlaying]}
@@ -33,7 +44,9 @@ export function TrackItem({ track, onPress, isPlaying, showDownload = true }: Tr
         </Text>
       </View>
       {showDownload && <DownloadButton track={track} />}
-      <Text style={styles.duration}>{formatTime(track.duration)}</Text>
+      <Text style={[styles.duration, isPlaying && styles.durationPlaying]}>
+        {formatTime(track.duration)}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -43,16 +56,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
   },
   playing: {
-    backgroundColor: colors.surfaceVariant,
+    backgroundColor: 'rgba(187, 134, 252, 0.08)',
+  },
+  thumbnailContainer: {
+    position: 'relative',
   },
   thumbnail: {
     width: 48,
     height: 48,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: colors.surface,
+  },
+  playingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: {
     flex: 1,
@@ -66,6 +89,7 @@ const styles = StyleSheet.create({
   },
   titlePlaying: {
     color: colors.primary,
+    fontWeight: '600',
   },
   artist: {
     color: colors.textSecondary,
@@ -75,5 +99,9 @@ const styles = StyleSheet.create({
   duration: {
     color: colors.textTertiary,
     fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  durationPlaying: {
+    color: colors.primary,
   },
 });

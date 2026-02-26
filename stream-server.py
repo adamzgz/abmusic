@@ -24,6 +24,7 @@ class StreamHandler(BaseHTTPRequestHandler):
             url = f'https://www.youtube.com/watch?v={video_id}'
             result = subprocess.run(
                 [sys.executable, '-m', 'yt_dlp',
+                 '--js-runtimes', 'node',
                  '-f', 'bestaudio[ext=m4a]/bestaudio',
                  '-g', url],
                 capture_output=True, text=True, timeout=30,

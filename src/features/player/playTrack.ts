@@ -16,9 +16,13 @@ async function resolveForPlayback(trackId: string): Promise<string> {
 
   // Strategy 1: android_vr InnerTube client via WebView (Chrome TLS)
   // Returns pre-authenticated URLs — no decipher/sig transform needed.
-  // ExoPlayer uses Cronet to download, so CDN accepts the request.
+  // Timeout after 8s to fall back to proxy quickly.
   try {
-    const stream = await getStreamViaInnertubeVR(trackId, quality);
+    const vrPromise = getStreamViaInnertubeVR(trackId, quality);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('VR timeout')), 8000)
+    );
+    const stream = await Promise.race([vrPromise, timeoutPromise]);
     if (__DEV__) {
       console.log('[resolve] VR DIRECT url length:', stream.url.length,
         'itag:', stream.itag, 'mime:', stream.mimeType);
@@ -32,6 +36,7 @@ async function resolveForPlayback(trackId: string): Promise<string> {
   }
 
   // Strategy 2: Fallback to yt-dlp proxy server (dev/backup)
+  if (__DEV__) console.log('[resolve] Trying proxy for:', trackId);
   const stream = await getStreamViaAndroidVR(trackId, quality);
   if (__DEV__) {
     console.log('[resolve] PROXY url length:', stream.url.length);

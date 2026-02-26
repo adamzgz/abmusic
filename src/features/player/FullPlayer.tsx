@@ -1,16 +1,32 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useState, useMemo, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+  PanResponder,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlayer } from './usePlayer';
 import { LyricsView } from './LyricsView';
 import { useDynamicColors } from '@/features/theme/useDynamicColors';
 import { DynamicBackground } from '@/features/theme/DynamicBackground';
 import { SleepTimerSheet } from '@/components/SleepTimerSheet';
+import { FavoriteButton } from '@/components/FavoriteButton';
+import { QueueView } from '@/components/QueueView';
 import { useTimerStore } from '@/core/store/timerStore';
+import { usePlayerStore } from '@/core/store/playerStore';
 import { formatRemaining } from './sleepTimer';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { formatTime } from '@/core/utils/formatTime';
+import type { MusicTrack } from '@/features/youtube/types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ARTWORK_SIZE = SCREEN_WIDTH - spacing.xl * 2;
+const PROGRESS_BAR_WIDTH = SCREEN_WIDTH - spacing.xl * 2;
 
 type PlayerView = 'artwork' | 'lyrics';
 
@@ -29,18 +45,84 @@ export function FullPlayer() {
 
   const [currentView, setCurrentView] = useState<PlayerView>('artwork');
   const [showTimerSheet, setShowTimerSheet] = useState(false);
+  const [showQueue, setShowQueue] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [seekPosition, setSeekPosition] = useState(0);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
   const artworkColors = useDynamicColors(activeTrack?.artwork ?? undefined);
   const timerActive = useTimerStore((s) => s.isActive);
   const timerEndOfTrack = useTimerStore((s) => s.endOfTrack);
   const timerRemaining = useTimerStore((s) => s.remainingMs);
+  const progressBarRef = useRef<View>(null);
 
-  if (!activeTrack) return null;
+  const queue = usePlayerStore((s) => s.queue);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
+
+  // Use store track as fallback when RNTP events don't fire
+  const storeTrack = queue[currentIndex];
+
+  // Fallback display track from store
+  const displayTrack = activeTrack ?? (storeTrack ? {
+    id: storeTrack.id,
+    title: storeTrack.title,
+    artist: storeTrack.artist,
+    artwork: storeTrack.thumbnail,
+    duration: storeTrack.duration,
+  } : null);
+
+  // Build a MusicTrack for the FavoriteButton
+  const currentTrack = useMemo((): MusicTrack | null => {
+    if (storeTrack) return storeTrack;
+    if (!displayTrack) return null;
+    return {
+      id: displayTrack.id ?? '',
+      title: displayTrack.title ?? '',
+      artist: displayTrack.artist ?? '',
+      duration: displayTrack.duration ?? 0,
+      thumbnail: displayTrack.artwork ?? '',
+    };
+  }, [displayTrack, storeTrack]);
+
+  // Seekable progress bar via PanResponder
+  const panResponder = useMemo(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        setIsSeeking(true);
+        const x = evt.nativeEvent.locationX;
+        const pct = Math.max(0, Math.min(1, x / PROGRESS_BAR_WIDTH));
+        setSeekPosition(pct * progress.duration);
+      },
+      onPanResponderMove: (evt) => {
+        const x = evt.nativeEvent.locationX;
+        const pct = Math.max(0, Math.min(1, x / PROGRESS_BAR_WIDTH));
+        setSeekPosition(pct * progress.duration);
+      },
+      onPanResponderRelease: () => {
+        seekTo(seekPosition);
+        setIsSeeking(false);
+      },
+    }),
+  [progress.duration, seekPosition, seekTo]);
+
+  const cycleRepeat = useCallback(() => {
+    setRepeatMode((m) => m === 'off' ? 'all' : m === 'all' ? 'one' : 'off');
+  }, []);
+
+  if (!displayTrack) return null;
+
+  const currentPosition = isSeeking ? seekPosition : progress.position;
+  const progressPct = progress.duration > 0
+    ? (currentPosition / progress.duration) * 100
+    : 0;
 
   return (
     <View style={styles.container}>
       <DynamicBackground artworkColors={artworkColors} />
 
-      {/* Header bar with timer + lyrics toggle */}
+      {/* Header bar with timer + queue + lyrics toggle */}
       <View style={styles.headerBar}>
         {/* Sleep timer */}
         <TouchableOpacity
@@ -64,6 +146,14 @@ export function FullPlayer() {
 
         <View style={styles.headerSpacer} />
 
+        {/* Queue */}
+        <TouchableOpacity
+          onPress={() => setShowQueue(true)}
+          style={styles.headerBtn}
+        >
+          <Ionicons name="list" size={22} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         {/* Lyrics toggle */}
         <TouchableOpacity
           onPress={() =>
@@ -82,53 +172,75 @@ export function FullPlayer() {
       {/* Main content: artwork or lyrics */}
       {currentView === 'artwork' ? (
         <Image
-          source={{ uri: activeTrack.artwork ?? undefined }}
-          style={styles.artwork}
+          source={{ uri: displayTrack.artwork ?? undefined }}
+          style={[styles.artwork, { width: ARTWORK_SIZE, height: ARTWORK_SIZE }]}
         />
       ) : (
-        <View style={styles.lyricsContainer}>
+        <View style={[styles.lyricsContainer, { height: ARTWORK_SIZE }]}>
           <LyricsView
-            title={activeTrack.title ?? undefined}
-            artist={activeTrack.artist ?? undefined}
-            duration={activeTrack.duration}
+            title={displayTrack.title ?? undefined}
+            artist={displayTrack.artist ?? undefined}
+            duration={displayTrack.duration}
           />
         </View>
       )}
 
+      {/* Track info + favorite */}
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
-          {activeTrack.title ?? 'Unknown'}
-        </Text>
-        <Text style={styles.artist} numberOfLines={1}>
-          {activeTrack.artist ?? 'Unknown artist'}
-        </Text>
+        <View style={styles.infoText}>
+          <Text style={styles.title} numberOfLines={2}>
+            {displayTrack.title ?? 'Unknown'}
+          </Text>
+          <Text style={styles.artist} numberOfLines={1}>
+            {displayTrack.artist ?? 'Unknown artist'}
+          </Text>
+        </View>
+        {currentTrack && <FavoriteButton track={currentTrack} size={28} />}
       </View>
 
-      {/* Progress */}
+      {/* Seekable progress bar */}
       <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
+        <View
+          ref={progressBarRef}
+          style={styles.progressBarTouch}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progressPct}%` } as any,
+              ]}
+            />
+          </View>
+          {/* Seek thumb */}
           <View
             style={[
-              styles.progressFill,
-              {
-                width:
-                  progress.duration > 0
-                    ? `${(progress.position / progress.duration) * 100}%`
-                    : '0%',
-              },
+              styles.seekThumb,
+              { left: `${progressPct}%` } as any,
+              isSeeking && styles.seekThumbActive,
             ]}
           />
         </View>
         <View style={styles.timeRow}>
-          <Text style={styles.time}>{formatTime(progress.position)}</Text>
-          <Text style={styles.time}>{formatTime(progress.duration)}</Text>
+          <Text style={styles.time}>{formatTime(currentPosition)}</Text>
+          <Text style={styles.time}>
+            {progress.duration > 0 ? `-${formatTime(progress.duration - currentPosition)}` : '0:00'}
+          </Text>
         </View>
       </View>
 
       {/* Controls */}
       <View style={styles.controls}>
+        <TouchableOpacity onPress={() => setShuffle(!shuffle)} style={styles.sideBtn}>
+          <Ionicons
+            name="shuffle"
+            size={22}
+            color={shuffle ? colors.primary : colors.textTertiary}
+          />
+        </TouchableOpacity>
         <TouchableOpacity onPress={skipToPrevious} style={styles.controlBtn}>
-          <Ionicons name="play-skip-back" size={32} color={colors.text} />
+          <Ionicons name="play-skip-back" size={30} color={colors.text} />
         </TouchableOpacity>
         <TouchableOpacity onPress={togglePlayback} style={styles.playBtn}>
           <Ionicons
@@ -138,13 +250,25 @@ export function FullPlayer() {
           />
         </TouchableOpacity>
         <TouchableOpacity onPress={skipToNext} style={styles.controlBtn}>
-          <Ionicons name="play-skip-forward" size={32} color={colors.text} />
+          <Ionicons name="play-skip-forward" size={30} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={cycleRepeat} style={styles.sideBtn}>
+          <Ionicons
+            name={repeatMode === 'one' ? 'repeat' : 'repeat'}
+            size={22}
+            color={repeatMode !== 'off' ? colors.primary : colors.textTertiary}
+          />
+          {repeatMode === 'one' && <Text style={styles.repeatOne}>1</Text>}
         </TouchableOpacity>
       </View>
 
       <SleepTimerSheet
         visible={showTimerSheet}
         onClose={() => setShowTimerSheet(false)}
+      />
+      <QueueView
+        visible={showQueue}
+        onClose={() => setShowQueue(false)}
       />
     </View>
   );
@@ -162,13 +286,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   headerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    padding: spacing.xs,
+    padding: spacing.sm,
   },
   headerSpacer: {
     flex: 1,
@@ -179,27 +303,35 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   artwork: {
-    width: 280,
-    height: 280,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: colors.surface,
     marginBottom: spacing.xl,
+    // Shadow for album art
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
   },
   lyricsContainer: {
     width: '100%',
-    height: 280,
     marginBottom: spacing.xl,
   },
   info: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     width: '100%',
+    gap: spacing.md,
+  },
+  infoText: {
+    flex: 1,
   },
   title: {
     color: colors.text,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    textAlign: 'center',
+    letterSpacing: -0.3,
   },
   artist: {
     color: colors.textSecondary,
@@ -208,11 +340,16 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     width: '100%',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  progressBarTouch: {
+    height: 24,
+    justifyContent: 'center',
+    position: 'relative',
   },
   progressBar: {
-    height: 3,
-    backgroundColor: colors.surfaceVariant,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -221,29 +358,66 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 2,
   },
+  seekThumb: {
+    position: 'absolute',
+    top: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    marginLeft: -4,
+  },
+  seekThumbActive: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    top: 5,
+    marginLeft: -7,
+  },
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
   time: {
     color: colors.textSecondary,
     fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xl,
+    width: '100%',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  sideBtn: {
+    padding: spacing.sm,
+    position: 'relative',
+  },
+  repeatOne: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    fontSize: 8,
+    fontWeight: '800',
+    color: colors.primary,
   },
   controlBtn: {
     padding: spacing.sm,
   },
   playBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    // Shadow for play button
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

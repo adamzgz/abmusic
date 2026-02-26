@@ -10,8 +10,8 @@ import type { StreamInfo, AudioQuality } from './types';
 // 10.0.2.2 is the host machine from Android emulator
 // For real device testing, use your machine's local IP
 const STREAM_SERVER = __DEV__
-  ? 'http://10.0.2.2:3333'
-  : 'http://10.0.2.2:3333'; // TODO: production endpoint
+  ? 'http://localhost:3333'
+  : 'http://localhost:3333'; // TODO: production endpoint
 
 export async function getStreamViaAndroidVR(
   videoId: string,

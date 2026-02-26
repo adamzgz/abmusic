@@ -16,6 +16,7 @@ import { usePlayerStore } from '@/core/store/playerStore';
 import { searchMusic, getSearchSuggestions } from '@/features/youtube/search';
 import { playTrack } from '@/features/player/playTrack';
 import { TrackItem } from '@/components/TrackItem';
+import { TrackContextMenu } from '@/components/TrackContextMenu';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
@@ -38,6 +39,7 @@ export default function SearchScreen() {
 
   const currentTrackId = usePlayerStore((s) => s.queue[s.currentIndex]?.id);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [contextTrack, setContextTrack] = useState<MusicTrack | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -200,6 +202,7 @@ export default function SearchScreen() {
             <TrackItem
               track={item}
               onPress={onTrackPress}
+              onLongPress={setContextTrack}
               isPlaying={item.id === currentTrackId}
             />
           )}
@@ -232,6 +235,11 @@ export default function SearchScreen() {
           </Text>
         </View>
       )}
+      <TrackContextMenu
+        track={contextTrack}
+        visible={contextTrack !== null}
+        onClose={() => setContextTrack(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -248,8 +256,8 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
-    borderRadius: 12,
-    paddingHorizontal: spacing.sm,
+    borderRadius: 28,
+    paddingHorizontal: spacing.md,
     height: 48,
   },
   searchIcon: {
@@ -311,7 +319,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   listContent: {
-    paddingBottom: 80, // Space for MiniPlayer
+    paddingBottom: 120, // Space for MiniPlayer + tab bar
   },
   emptyTitle: {
     ...typography.h3,

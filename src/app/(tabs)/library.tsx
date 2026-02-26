@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { getFavorites } from '@/features/library/favorites';
 import { getHistory, clearHistory, type HistoryEntry } from '@/features/library/history';
@@ -23,6 +24,7 @@ import { getAllCachedAudio, getCacheSize, cachedToTrack, type CachedAudio } from
 import { deleteDownload } from '@/features/cache/offlineCache';
 import { playTrack } from '@/features/player/playTrack';
 import { TrackItem } from '@/components/TrackItem';
+import { TrackContextMenu } from '@/components/TrackContextMenu';
 import { ImportPlaylistSheet } from '@/components/ImportPlaylistSheet';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
@@ -49,6 +51,7 @@ export default function LibraryScreen() {
   const [showNewPlaylist, setShowNewPlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [contextTrack, setContextTrack] = useState<MusicTrack | null>(null);
   const currentTrackId = usePlayerStore((s) => s.queue[s.currentIndex]?.id);
 
   const loadData = useCallback(async () => {
@@ -172,6 +175,7 @@ export default function LibraryScreen() {
             <TrackItem
               track={item}
               onPress={onTrackPress}
+              onLongPress={setContextTrack}
               isPlaying={item.id === currentTrackId}
             />
           )}
@@ -194,7 +198,16 @@ export default function LibraryScreen() {
           data={playlists}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.playlistItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.playlistItem}
+              activeOpacity={0.7}
+              onPress={() =>
+                router.push({
+                  pathname: '/playlist/[id]',
+                  params: { id: item.id, name: item.name },
+                })
+              }
+            >
               <View style={styles.playlistIcon}>
                 <Ionicons name="musical-notes" size={20} color={colors.primary} />
               </View>
@@ -279,6 +292,7 @@ export default function LibraryScreen() {
             <TrackItem
               track={item.track}
               onPress={onTrackPress}
+              onLongPress={setContextTrack}
               isPlaying={item.track.id === currentTrackId}
             />
           )}
@@ -353,6 +367,11 @@ export default function LibraryScreen() {
         onClose={() => setShowImport(false)}
         onImported={loadData}
       />
+      <TrackContextMenu
+        track={contextTrack}
+        visible={contextTrack !== null}
+        onClose={() => setContextTrack(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -394,7 +413,7 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
   },
   listContent: {
-    paddingBottom: 80,
+    paddingBottom: 120,
   },
   empty: {
     alignItems: 'center',
