@@ -80,7 +80,7 @@ export async function downloadTrack(track: MusicTrack): Promise<void> {
   try {
     // Resolve stream URL (same chain as playback)
     const stream = await resolveStreamForDownload(track.id);
-    cb?.({ trackId: track.id, progress: 0.1, status: 'downloading' });
+    cb?.({ trackId: track.id, progress: 0.05, status: 'downloading' });
 
     const ext = stream.mimeType.includes('webm') ? 'webm' : 'm4a';
     const fileName = `${track.id}.${ext}`;
@@ -88,10 +88,20 @@ export async function downloadTrack(track: MusicTrack): Promise<void> {
     const dirPath = audioDir.uri.replace(/^file:\/\//, '').replace(/\/+$/, '');
     const destPath = `${dirPath}/${fileName}`;
 
-    if (__DEV__) console.log('[download] Cronet downloading to:', destPath);
+    if (__DEV__) console.log('[download] Cronet downloading to:', destPath, 'size:', stream.contentLength);
 
-    // Download using Cronet (Chrome TLS) — bypasses YouTube CDN blocking
-    const result = await downloadWithCronet(stream.url, destPath);
+    // Download using Cronet with chunked range requests (bypasses YouTube CDN throttling)
+    const result = await downloadWithCronet(
+      stream.url,
+      destPath,
+      stream.contentLength,
+      track.id,
+      (progress) => {
+        // Map Cronet progress (0-1) into the 0.05-1.0 range (0.05 = resolved, 1.0 = done)
+        const mapped = 0.05 + progress * 0.95;
+        cb?.({ trackId: track.id, progress: mapped, status: 'downloading' });
+      },
+    );
 
     if (__DEV__) console.log('[download] complete:', result.bytesWritten, 'bytes');
 

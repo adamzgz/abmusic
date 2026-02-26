@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import {
   downloadTrack,
   deleteDownload,
@@ -16,11 +17,16 @@ interface Props {
   track: MusicTrack;
 }
 
+const CIRCLE_SIZE = 22;
+const STROKE_WIDTH = 2.5;
+const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
 export function DownloadButton({ track }: Props) {
   const [status, setStatus] = useState<'none' | 'downloading' | 'downloaded'>('none');
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Check initial state
     if (isActivelyDownloading(track.id)) {
       setStatus('downloading');
     } else {
@@ -29,11 +35,17 @@ export function DownloadButton({ track }: Props) {
       });
     }
 
-    // Listen for progress
     const unsub = onDownloadProgress(track.id, (p) => {
-      if (p.status === 'complete') setStatus('downloaded');
-      else if (p.status === 'downloading') setStatus('downloading');
-      else setStatus('none');
+      if (p.status === 'complete') {
+        setStatus('downloaded');
+        setProgress(0);
+      } else if (p.status === 'downloading') {
+        setStatus('downloading');
+        setProgress(p.progress);
+      } else {
+        setStatus('none');
+        setProgress(0);
+      }
     });
 
     return () => { unsub(); };
@@ -47,10 +59,12 @@ export function DownloadButton({ track }: Props) {
       setStatus('none');
     } else {
       setStatus('downloading');
+      setProgress(0);
       try {
         await downloadTrack(track);
       } catch {
         setStatus('none');
+        setProgress(0);
       }
     }
   }, [status, track]);
@@ -58,7 +72,33 @@ export function DownloadButton({ track }: Props) {
   return (
     <TouchableOpacity style={styles.btn} onPress={onPress} activeOpacity={0.6}>
       {status === 'downloading' ? (
-        <ActivityIndicator size="small" color={colors.primary} />
+        <View style={styles.progressContainer}>
+          <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
+            {/* Background circle */}
+            <Circle
+              cx={CIRCLE_SIZE / 2}
+              cy={CIRCLE_SIZE / 2}
+              r={RADIUS}
+              stroke={colors.surfaceVariant}
+              strokeWidth={STROKE_WIDTH}
+              fill="none"
+            />
+            {/* Progress arc */}
+            <Circle
+              cx={CIRCLE_SIZE / 2}
+              cy={CIRCLE_SIZE / 2}
+              r={RADIUS}
+              stroke={colors.primary}
+              strokeWidth={STROKE_WIDTH}
+              fill="none"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
+              strokeLinecap="round"
+              rotation={-90}
+              origin={`${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2}`}
+            />
+          </Svg>
+        </View>
       ) : (
         <Ionicons
           name={status === 'downloaded' ? 'cloud-done' : 'cloud-download-outline'}
@@ -74,5 +114,11 @@ const styles = StyleSheet.create({
   btn: {
     padding: spacing.xs,
     marginLeft: spacing.xs,
+  },
+  progressContainer: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
