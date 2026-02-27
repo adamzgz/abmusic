@@ -26,12 +26,25 @@ export interface StreamInfo {
   headers?: Record<string, string>;
 }
 
+import { Platform } from 'react-native';
+
 // Audio quality preference
 export type AudioQuality = 'high' | 'medium' | 'low';
 
-// Maps quality to preferred itags (Opus)
-export const QUALITY_ITAGS: Record<AudioQuality, number[]> = {
+// Android: Opus preferred (ExoPlayer + Cronet handles WebM/Opus natively)
+const ANDROID_QUALITY_ITAGS: Record<AudioQuality, number[]> = {
   high: [251, 140], // Opus 160kbps, fallback AAC 128kbps
   medium: [250, 140], // Opus 70kbps, fallback AAC 128kbps
   low: [249, 250, 140], // Opus 50kbps, fallback 70kbps, fallback AAC
 };
+
+// iOS: AAC only (AVPlayer doesn't support Opus/WebM)
+const IOS_QUALITY_ITAGS: Record<AudioQuality, number[]> = {
+  high: [140],
+  medium: [140],
+  low: [140],
+};
+
+// Maps quality to preferred itags (platform-aware)
+export const QUALITY_ITAGS: Record<AudioQuality, number[]> =
+  Platform.OS === 'ios' ? IOS_QUALITY_ITAGS : ANDROID_QUALITY_ITAGS;

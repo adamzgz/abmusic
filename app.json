@@ -16,7 +16,9 @@
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       },
       "bundleIdentifier": "com.sonicflow.app"
     },
@@ -36,6 +38,9 @@
           "android": {
             "minSdkVersion": 24,
             "usesCleartextTraffic": true
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
           }
         }
       ],
@@ -45,6 +50,15 @@
           "root": "./src/app"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "root": "./src/app"
+      },
+      "eas": {
+        "projectId": "6465d4f5-2075-4ce7-8765-fa3da4298768"
+      }
+    },
+    "owner": "adamzgz"
   }
 }

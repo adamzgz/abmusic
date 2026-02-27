@@ -1,0 +1,58 @@
+name: Build iOS IPA (unsigned)
+
+on:
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Generate iOS project
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: cd ios && pod install
+
+      - name: Build unsigned archive
+        run: |
+          xcodebuild \
+            -workspace ios/SonicFlow.xcworkspace \
+            -scheme SonicFlow \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -archivePath build/SonicFlow.xcarchive \
+            archive \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM="" | tail -20
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/SonicFlow.xcarchive/Products/Applications/SonicFlow.app Payload/
+          zip -r SonicFlow.ipa Payload
+          ls -lh SonicFlow.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonicFlow-iOS
+          path: SonicFlow.ipa
+          retention-days: 30

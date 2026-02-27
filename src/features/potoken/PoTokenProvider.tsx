@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { PO_TOKEN_HTML } from './potoken-html';
 import { fetchChallenge, fetchIntegrityToken } from './potoken-service';
@@ -338,7 +338,10 @@ export function PoTokenProvider() {
         javaScriptEnabled
         onMessage={onMessage}
         onLoadEnd={startBotGuard}
-        userAgent="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+        userAgent={Platform.select({
+          ios: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          default: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+        })}
         thirdPartyCookiesEnabled
         sharedCookiesEnabled
       />

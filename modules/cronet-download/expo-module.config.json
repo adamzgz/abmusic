@@ -1,6 +1,9 @@
 {
-  "platforms": ["android"],
+  "platforms": ["android", "ios"],
   "android": {
     "modules": ["com.sonicflow.cronetdownload.CronetDownloadModule"]
+  },
+  "ios": {
+    "modules": ["CronetDownloadModule"]
   }
 }
