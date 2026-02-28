@@ -22,6 +22,7 @@ import { formatRemaining } from './sleepTimer';
 import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
 import { formatTime } from '@/core/utils/formatTime';
+import { getHiResThumbnail } from '@/core/utils/thumbnail';
 import type { MusicTrack } from '@/features/youtube/types';
 import type { ColorPalette } from '@/theme/colors';
 
@@ -178,7 +179,7 @@ export function FullPlayer() {
       {/* Main content: artwork or lyrics */}
       {currentView === 'artwork' ? (
         <Image
-          source={{ uri: displayTrack.artwork ?? undefined }}
+          source={{ uri: getHiResThumbnail(displayTrack.artwork ?? undefined) }}
           style={[styles.artwork, { width: ARTWORK_SIZE, height: ARTWORK_SIZE }]}
         />
       ) : (

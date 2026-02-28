@@ -48,7 +48,7 @@ The logical queue (metadata in Zustand `playerStore`) is separate from the physi
 
 ### Stream Resolution (CRITICAL)
 
-**YouTube blocks ALL stream URL fetches from non-browser HTTP clients** via TLS fingerprinting. See RESEARCH.md §9 for the full investigation.
+**YouTube blocks ALL stream URL fetches from non-browser HTTP clients** via TLS fingerprinting.
 
 Resolution chain:
 1. **Offline cache** — check SQLite for cached stream URLs
@@ -78,9 +78,9 @@ Two Expo native modules (TypeScript → Kotlin):
 
 ### State Management
 Four Zustand stores in `src/core/store/`:
-- `playerStore` — queue, currentIndex, radio mode
-- `searchStore` — query, results, suggestions, loading state
-- `settingsStore` — audioQuality, crossfadeDuration, eqEnabled, eqPreset, eqBands, lastFmApiKey
+- `playerStore` — queue, currentIndex, isRadioMode, shuffle, repeatMode, isRestored
+- `searchStore` — query, results, suggestions, isLoading, error
+- `settingsStore` — audioQuality, crossfadeDuration, eqEnabled, eqPreset, eqBands, lastFmApiKey, themeMode, autoQueue
 - `timerStore` — sleep timer (timed duration + end-of-track modes)
 
 ### Features (`src/features/`)
@@ -94,10 +94,10 @@ Four Zustand stores in `src/core/store/`:
 - **`potoken/`** — YouTube bot protection bypass via WebView token minting
 
 ### Database
-expo-sqlite (WAL mode, foreign keys enabled) with 6 tables in `src/core/database/schema.ts`: playlists, playlist_tracks, favorites, play_history, cached_streams, cached_audio.
+expo-sqlite (WAL mode, foreign keys enabled) with 8 tables in `src/core/database/schema.ts`: playlists, playlist_tracks, favorites, play_history, cached_streams, cached_audio, player_queue, player_state. Queue state is debounce-saved to SQLite and restored on app startup.
 
 ### Theme
-Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: `#0a0a0a`. Dynamic colors extracted from current track artwork.
+Material You palette in `src/theme/` with light/dark/system modes (`themeMode` in settingsStore). Primary: `#bb86fc`. Dark background: `#0a0a0a`. Dynamic colors extracted from current track artwork. Typography, spacing, and color scales defined in `src/theme/`.
 
 ## Critical Configuration
 
@@ -109,15 +109,10 @@ Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: 
 
 ## Known Issues
 
-- **YouTube 403 on stream URLs:** Solved with WebView (VR client) + Cronet (ExoPlayer). See RESEARCH.md §9.
+- **YouTube 403 on stream URLs:** Solved with WebView (VR client) + Cronet (ExoPlayer).
 - `Innertube.create()` can freeze UI for 10+ seconds on first run (CPU-intensive JS parsing in Hermes). Mitigated with `retrieve_player: false` in `features/youtube/client.ts`.
 - react-native-track-player requires dev-client builds — **does not work with Expo Go**
-- `--legacy-peer-deps` needed for npm install
-
-## Project Spec & Research
-
-- `CLAUDE_CODE_PROMPT.md` — Full project requirements (Phases 0-3)
-- `RESEARCH.md` — Technical research findings (includes §9: YouTube stream blocking investigation)
+- `--legacy-peer-deps` needed for npm install (`.npmrc` has `legacy-peer-deps=true`)
 
 ## CI/CD
 

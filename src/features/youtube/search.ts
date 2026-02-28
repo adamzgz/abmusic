@@ -9,11 +9,6 @@ export async function searchMusic(query: string): Promise<SearchResults> {
 
   const contents = results.contents ?? [];
 
-  // Log structure in dev to debug
-  if (__DEV__ && contents.length > 0) {
-    const first = contents[0] as any;
-    console.log('[search] first item type:', first?.type, 'keys:', Object.keys(first ?? {}));
-  }
   if (__DEV__) {
     console.log('[search] total contents:', contents.length);
   }

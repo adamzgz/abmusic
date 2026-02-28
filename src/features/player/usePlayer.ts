@@ -34,7 +34,9 @@ export function usePlayer() {
           TrackPlayer.getActiveTrack(),
         ]);
         if (!mounted) return;
-        if (pb.state !== polledRef.current.state) {
+        // Skip state update if we're within the optimistic guard window
+        const withinGuard = Date.now() < optimisticUntilRef.current;
+        if (pb.state !== polledRef.current.state && !withinGuard) {
           polledRef.current.state = pb.state;
           setPolledState(pb.state);
         }
@@ -71,22 +73,52 @@ export function usePlayer() {
     return () => { s1.remove(); s2.remove(); s3.remove(); };
   }, []);
 
-  // Prefer hook values if available, fall back to polled values
+  // Use polled state as primary source — RNTP hooks can return stale values
+  // that override our optimistic updates after togglePlayback.
   const activeTrack = hookTrack ?? polledTrack;
-  const effectiveState = hookState.state ?? polledState;
+  const effectiveState = polledState ?? hookState.state;
   const isPlaying = effectiveState === State.Playing;
   const isBuffering = effectiveState === State.Buffering;
   const isLoading = effectiveState === State.Loading;
 
+  // Guard: ignore polled updates briefly after an optimistic toggle
+  const optimisticUntilRef = useRef(0);
+
   const togglePlayback = useCallback(async () => {
-    // Always query fresh state — don't rely on potentially stale hook value
-    const fresh = await TrackPlayer.getPlaybackState();
-    const playing = fresh.state === State.Playing;
-    console.log('[usePlayer] togglePlayback fresh:', fresh.state, 'playing:', playing);
-    if (playing) {
-      await TrackPlayer.pause();
-    } else {
-      await TrackPlayer.play();
+    try {
+      // Try fresh state first, but with a timeout so it doesn't hang
+      let active = false;
+      try {
+        const fresh = await Promise.race([
+          TrackPlayer.getPlaybackState(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 500)),
+        ]);
+        active = fresh.state === State.Playing
+          || fresh.state === State.Buffering
+          || fresh.state === State.Loading;
+      } catch {
+        // Fresh state failed/timed out — fall back to current polled state
+        active = polledRef.current.state === State.Playing
+          || polledRef.current.state === State.Buffering
+          || polledRef.current.state === State.Loading;
+      }
+
+      console.log('[usePlayer] togglePlayback active:', active);
+
+      // Set guard so poll doesn't overwrite our optimistic state for 2s
+      optimisticUntilRef.current = Date.now() + 2000;
+
+      if (active) {
+        await TrackPlayer.pause();
+        polledRef.current.state = State.Paused;
+        setPolledState(State.Paused);
+      } else {
+        await TrackPlayer.play();
+        polledRef.current.state = State.Playing;
+        setPolledState(State.Playing);
+      }
+    } catch (e) {
+      console.warn('[usePlayer] togglePlayback error:', e);
     }
   }, []);
 

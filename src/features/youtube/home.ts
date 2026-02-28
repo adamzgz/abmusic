@@ -57,26 +57,65 @@ export async function getHomeSections(): Promise<HomeSection[]> {
 /**
  * Fetch all tracks from a YouTube Music album.
  */
-export async function getAlbumTracks(albumId: string): Promise<MusicTrack[]> {
+export interface AlbumDetail {
+  title: string;
+  artist: string;
+  thumbnail: string;
+  year?: string;
+  tracks: MusicTrack[];
+}
+
+export async function getAlbumDetail(albumId: string): Promise<AlbumDetail> {
   const yt = await getInnertube();
   const album = await yt.music.getAlbum(albumId);
 
-  if (!album?.contents) return [];
+  // Extract album-level thumbnail from header
+  const headerThumb =
+    (album as any).header?.thumbnails?.[(album as any).header?.thumbnails?.length - 1]?.url ??
+    (album as any).header?.thumbnail?.contents?.[(album as any).header?.thumbnail?.contents?.length - 1]?.url ??
+    (album as any).background?.[(album as any).background?.length - 1]?.url ??
+    '';
 
-  return album.contents
+  const albumTitle =
+    (album as any).header?.title?.text ??
+    (album as any).header?.title?.toString?.() ??
+    'Unknown album';
+
+  const albumArtist =
+    (album as any).header?.subtitle?.text ??
+    (album as any).header?.strapline_text_one?.text ??
+    'Unknown artist';
+
+  const albumYear =
+    (album as any).header?.subtitle?.text?.match(/\d{4}/)?.[0] ?? undefined;
+
+  const tracks = (album?.contents ?? [])
     .map((item: any) => ({
       id: item.video_id ?? item.id ?? item.endpoint?.payload?.videoId ?? '',
       title: item.title?.text ?? item.title ?? 'Unknown',
       artist:
         item.artists?.[0]?.name ??
         item.author?.name ??
-        album.header?.subtitle?.text ??
-        'Unknown artist',
+        albumArtist,
       duration: item.duration?.seconds ?? 0,
-      thumbnail: item.thumbnails?.[0]?.url ?? item.thumbnail?.[0]?.url ?? '',
+      thumbnail: item.thumbnails?.[0]?.url ?? item.thumbnail?.[0]?.url ?? headerThumb,
+      album: albumTitle,
       albumId,
     }))
     .filter((t: MusicTrack) => t.id !== '');
+
+  return {
+    title: albumTitle,
+    artist: albumArtist,
+    thumbnail: headerThumb,
+    year: albumYear,
+    tracks,
+  };
+}
+
+export async function getAlbumTracks(albumId: string): Promise<MusicTrack[]> {
+  const detail = await getAlbumDetail(albumId);
+  return detail.tracks;
 }
 
 /**

@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { getHistory, type HistoryEntry } from '@/features/library/history';
 import { playTrack, playTracks } from '@/features/player/playTrack';
+import { router } from 'expo-router';
 import { getRadioTracks } from '@/features/youtube/radio';
 import { startRadio } from '@/features/radio/engine';
 import { artistRadio } from '@/features/radio/strategies/artistRadio';
@@ -27,7 +28,6 @@ import { TrackItem } from '@/components/TrackItem';
 import { TrackContextMenu } from '@/components/TrackContextMenu';
 import {
   getHomeSections,
-  getAlbumTracks,
   getPlaylistTracks,
   type HomeSection,
   type HomeItem,
@@ -142,10 +142,11 @@ export default function HomeScreen() {
   const onHomeItemPress = useCallback(async (item: HomeItem) => {
     try {
       if (item.type === 'album') {
-        const tracks = await getAlbumTracks(item.id);
-        if (tracks.length > 0) {
-          await playTracks(tracks, 0);
-        }
+        // Navigate to album detail screen
+        router.push({
+          pathname: '/album/[id]',
+          params: { id: item.id, title: item.title, thumbnail: item.thumbnail },
+        });
       } else if (item.type === 'playlist') {
         const tracks = await getPlaylistTracks(item.id);
         if (tracks.length > 0) {
