@@ -2,6 +2,16 @@
 
 A fully serverless music streaming client for Android & iOS, built as a technical challenge to explore YouTube's InnerTube API, native module development, and real-time audio streaming — all without any backend infrastructure.
 
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/home.png" width="200" alt="Home">
+  <img src="assets/screenshots/search_results.png" width="200" alt="Search">
+  <img src="assets/screenshots/player.png" width="200" alt="Player">
+  <img src="assets/screenshots/library.png" width="200" alt="Library">
+  <img src="assets/screenshots/settings.png" width="200" alt="Settings">
+</p>
+
 ## Why This Project
 
 Modern streaming platforms rely on complex server-side architectures for stream resolution, authentication, and content delivery. **ABMusic removes the server entirely**, pushing all that logic to the client. This creates interesting engineering problems:
