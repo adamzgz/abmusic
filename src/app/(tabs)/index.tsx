@@ -25,7 +25,13 @@ import { mixRadio } from '@/features/radio/strategies/mixRadio';
 import { RadioPicker, type RadioType } from '@/features/radio/RadioPicker';
 import { TrackItem } from '@/components/TrackItem';
 import { TrackContextMenu } from '@/components/TrackContextMenu';
-import { getHomeSections, type HomeSection } from '@/features/youtube/home';
+import {
+  getHomeSections,
+  getAlbumTracks,
+  getPlaylistTracks,
+  type HomeSection,
+  type HomeItem,
+} from '@/features/youtube/home';
 import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
@@ -129,6 +135,34 @@ export default function HomeScreen() {
       await playTrack(track);
     } catch {
       // Ignore
+    }
+  }, []);
+
+  // Handle tapping a home feed item (song, album, or playlist)
+  const onHomeItemPress = useCallback(async (item: HomeItem) => {
+    try {
+      if (item.type === 'album') {
+        const tracks = await getAlbumTracks(item.id);
+        if (tracks.length > 0) {
+          await playTracks(tracks, 0);
+        }
+      } else if (item.type === 'playlist') {
+        const tracks = await getPlaylistTracks(item.id);
+        if (tracks.length > 0) {
+          await playTracks(tracks, 0);
+        }
+      } else {
+        // Song — play directly
+        await playTrack({
+          id: item.id,
+          title: item.title,
+          artist: item.artist,
+          duration: item.duration,
+          thumbnail: item.thumbnail,
+        });
+      }
+    } catch (e) {
+      if (__DEV__) console.warn('[Home] item press failed:', e);
     }
   }, []);
 
@@ -320,23 +354,36 @@ export default function HomeScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.carouselContent}
                 >
-                  {section.tracks.map((track) => (
+                  {section.items.map((item) => (
                     <TouchableOpacity
-                      key={track.id}
+                      key={item.id}
                       style={styles.carouselCard}
-                      onPress={() => onTrackPress(track)}
-                      onLongPress={() => setContextTrack(track)}
+                      onPress={() => onHomeItemPress(item)}
+                      onLongPress={() =>
+                        item.type === 'song'
+                          ? setContextTrack({
+                              id: item.id,
+                              title: item.title,
+                              artist: item.artist,
+                              duration: item.duration,
+                              thumbnail: item.thumbnail,
+                            })
+                          : undefined
+                      }
                       activeOpacity={0.7}
                     >
                       <Image
-                        source={{ uri: track.thumbnail }}
-                        style={styles.carouselThumb}
+                        source={{ uri: item.thumbnail }}
+                        style={[
+                          styles.carouselThumb,
+                          item.type === 'album' && styles.carouselThumbAlbum,
+                        ]}
                       />
                       <Text style={styles.carouselTrackTitle} numberOfLines={2}>
-                        {track.title}
+                        {item.title}
                       </Text>
                       <Text style={styles.carouselArtist} numberOfLines={1}>
-                        {track.artist}
+                        {item.artist}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -559,6 +606,9 @@ const createStyles = (colors: ColorPalette) =>
       height: 140,
       borderRadius: 8,
       backgroundColor: colors.surface,
+    },
+    carouselThumbAlbum: {
+      borderRadius: 4,
     },
     carouselTrackTitle: {
       color: colors.text,

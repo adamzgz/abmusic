@@ -1,4 +1,4 @@
-# Prompt para Claude Code — Proyecto "SonicFlow"
+# Prompt para Claude Code — Proyecto "ABMusic"
 
 ## Contexto
 
@@ -54,7 +54,7 @@ Antes de escribir código, necesito que investigues y documentes en un archivo `
 Una vez completada la investigación, crear la estructura base:
 
 ```
-sonicflow/
+abmusic/
 ├── src/
 │   ├── app/                    # Navegación (React Navigation o Expo Router)
 │   │   ├── (tabs)/
@@ -180,7 +180,7 @@ Implementar en este orden de prioridad:
 - **Sin backend propio.** Todo corre en el dispositivo.
 - **Sin monetización.** Proyecto open-source para portfolio.
 - **Sin la palabra "YouTube" en el nombre ni en el README.** Describir como "reproductor de música con fuentes de audio pluggable."
-- **Nombre del proyecto:** SonicFlow (o sugerir alternativas si encuentras conflictos)
+- **Nombre del proyecto:** ABMusic (o sugerir alternativas si encuentras conflictos)
 - **Idioma del código:** TypeScript estricto, inglés para código y comentarios
 - **Target:** Android primero (iOS después, pero no romper compatibilidad)
 - **Mínimo Android:** API 24 (Android 7.0)

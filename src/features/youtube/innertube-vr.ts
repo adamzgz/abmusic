@@ -3,7 +3,7 @@
 // that don't need sig/n-transform (no decipher needed).
 // The API call goes through the WebView (Chrome TLS) to avoid fingerprint blocks.
 
-import { youtubeApiCallViaWebView, getVisitorData, ensureYouTubeSession } from '@/features/potoken/PoTokenProvider';
+import { youtubeApiCallViaWebView, getVisitorData, ensureYouTubeSession, mintPoToken, isPoTokenReady } from '@/features/potoken/PoTokenProvider';
 import type { StreamInfo, AudioQuality } from './types';
 import { QUALITY_ITAGS } from './types';
 
@@ -108,11 +108,24 @@ export async function getStreamViaInnertubeVR(
   const context = buildVRContext();
   if (__DEV__) console.log('[innertube-vr] hasVisitorData:', !!context.client.visitorData);
 
-  const body = {
+  // Mint a PO Token bound to this videoId to prove we're not a bot.
+  // Without this, YouTube may return "Sign in to confirm you're not a bot".
+  let poToken: string | undefined;
+  if (isPoTokenReady()) {
+    try {
+      poToken = await mintPoToken(videoId);
+      if (__DEV__) console.log('[innertube-vr] minted poToken, length:', poToken.length);
+    } catch (e: any) {
+      if (__DEV__) console.warn('[innertube-vr] poToken mint failed:', e?.message);
+    }
+  }
+
+  const body: any = {
     videoId,
     context,
     contentCheckOk: true,
     racyCheckOk: true,
+    ...(poToken ? { serviceIntegrityDimensions: { poToken } } : {}),
   };
 
   const data = await youtubeApiCallViaWebView(PLAYER_ENDPOINT, body);

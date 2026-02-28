@@ -1,4 +1,4 @@
-package com.sonicflow.equalizer
+package com.abmusic.equalizer
 
 import android.media.audiofx.Equalizer
 import expo.modules.kotlin.modules.Module

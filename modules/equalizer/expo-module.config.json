@@ -1,7 +1,7 @@
 {
   "platforms": ["android", "ios"],
   "android": {
-    "modules": ["com.sonicflow.equalizer.EqualizerModule"]
+    "modules": ["com.abmusic.equalizer.EqualizerModule"]
   },
   "ios": {
     "modules": ["EqualizerModule"]

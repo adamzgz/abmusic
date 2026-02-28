@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SonicFlow is a YouTube Music streaming app built with Expo SDK 54 + React Native (Hermes engine). It uses youtubei.js for search/browse and an on-device InnerTube VR client (via WebView with Chrome TLS) for stream URL resolution, with react-native-track-player for background audio playback.
+ABMusic is a YouTube Music streaming app built with Expo SDK 54 + React Native (Hermes engine). It uses youtubei.js for search/browse and an on-device InnerTube VR client (via WebView with Chrome TLS) for stream URL resolution, with react-native-track-player for background audio playback.
 
 **Fully serverless** — no backend or proxy server required.
 
@@ -92,7 +92,7 @@ Four Zustand stores in `src/core/store/`:
 - **`potoken/`** — YouTube bot protection bypass via WebView token minting
 
 ### Database
-expo-sqlite with 5 tables in `src/core/database/schema.ts`: playlists, playlist_tracks, favorites, play_history, cached_streams.
+expo-sqlite (WAL mode, foreign keys enabled) with 6 tables in `src/core/database/schema.ts`: playlists, playlist_tracks, favorites, play_history, cached_streams, cached_audio.
 
 ### Theme
 Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: `#0a0a0a`. Dynamic colors extracted from current track artwork.
@@ -100,7 +100,7 @@ Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: 
 ## Critical Configuration
 
 - `metro.config.js`: `unstable_enablePackageExports: true` — **required** for youtubei.js module resolution
-- `app.json`: `expo-router` plugin sets root to `./src/app`; iOS has audio background mode enabled
+- `app.json`: `expo-router` plugin sets root to `./src/app`; iOS has audio background mode enabled; `newArchEnabled: true`; Android minSdk 24
 - `tsconfig.json`: `@/*` maps to `src/*` for imports
 - `babel.config.js`: `react-native-reanimated/plugin` must be last
 - `patches/react-native-track-player+4.1.2.patch`: Inlines KotlinAudio, adds Cronet + ExoPlayer 2.19.0
@@ -108,7 +108,7 @@ Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: 
 ## Known Issues
 
 - **YouTube 403 on stream URLs:** Solved with WebView (VR client) + Cronet (ExoPlayer). See RESEARCH.md §9.
-- `Innertube.create()` can freeze UI for 10+ seconds on first run (CPU-intensive JS parsing in Hermes)
+- `Innertube.create()` can freeze UI for 10+ seconds on first run (CPU-intensive JS parsing in Hermes). Mitigated with `retrieve_player: false` in `features/youtube/client.ts`.
 - react-native-track-player requires dev-client builds — **does not work with Expo Go**
 - `--legacy-peer-deps` needed for npm install
 
@@ -116,3 +116,7 @@ Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: 
 
 - `CLAUDE_CODE_PROMPT.md` — Full project requirements (Phases 0-3)
 - `RESEARCH.md` — Technical research findings (includes §9: YouTube stream blocking investigation)
+
+## CI/CD
+
+- `.github/workflows/build-ios.yml` — Manual trigger iOS build (unsigned IPA archive, macOS 15 runner)

@@ -1,4 +1,4 @@
-// SQLite schema for SonicFlow.
+// SQLite schema for ABMusic.
 // Uses expo-sqlite for local persistence of playlists, favorites, and history.
 
 export const CREATE_TABLES_SQL = `

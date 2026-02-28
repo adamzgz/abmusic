@@ -1,4 +1,4 @@
-# RESEARCH.md — Fase 0: Investigación Técnica de SonicFlow
+# RESEARCH.md — Fase 0: Investigación Técnica de ABMusic
 
 > Investigación completada el 24/02/2026. Cada sección incluye fuentes verificadas.
 
@@ -259,7 +259,7 @@ TrackPlayer.registerPlaybackService(() => PlaybackService);
 ### Setup recomendado
 
 ```bash
-npx create-expo-app@latest sonicflow --template blank-typescript
+npx create-expo-app@latest abmusic --template blank-typescript
 npx expo install expo-sqlite expo-build-properties expo-crypto
 npm install react-native-track-player youtubei.js react-native-mmkv zustand
 npm install base-64 event-target-polyfill react-native-url-polyfill text-encoding-polyfill web-streams-polyfill

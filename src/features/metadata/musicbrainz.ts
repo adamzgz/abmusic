@@ -3,7 +3,7 @@
 // Rate limit: 1 request per second (be respectful).
 
 const BASE_URL = 'https://musicbrainz.org/ws/2';
-const USER_AGENT = 'SonicFlow/1.0.0 (https://github.com/adamzgz/sonicflow)';
+const USER_AGENT = 'ABMusic/1.0.0 (https://github.com/adamzgz/abmusic)';
 
 async function mbFetch(endpoint: string, params: Record<string, string> = {}) {
   const url = new URL(`${BASE_URL}/${endpoint}`);

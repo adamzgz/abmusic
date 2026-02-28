@@ -1,7 +1,7 @@
 {
   "platforms": ["android", "ios"],
   "android": {
-    "modules": ["com.sonicflow.cronetdownload.CronetDownloadModule"]
+    "modules": ["com.abmusic.cronetdownload.CronetDownloadModule"]
   },
   "ios": {
     "modules": ["CronetDownloadModule"]

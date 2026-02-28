@@ -1,4 +1,4 @@
-package com.sonicflow.cronetdownload
+package com.abmusic.cronetdownload
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition

@@ -1,4 +1,4 @@
-// Database migrations for SonicFlow.
+// Database migrations for ABMusic.
 // Each migration is idempotent (uses IF NOT EXISTS).
 // Add new migrations as the schema evolves.
 

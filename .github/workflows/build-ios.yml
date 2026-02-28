@@ -30,12 +30,12 @@ jobs:
       - name: Build unsigned archive
         run: |
           xcodebuild \
-            -workspace ios/SonicFlow.xcworkspace \
-            -scheme SonicFlow \
+            -workspace ios/ABMusic.xcworkspace \
+            -scheme ABMusic \
             -configuration Release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
-            -archivePath build/SonicFlow.xcarchive \
+            -archivePath build/ABMusic.xcarchive \
             archive \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
@@ -46,13 +46,13 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p Payload
-          cp -r build/SonicFlow.xcarchive/Products/Applications/SonicFlow.app Payload/
-          zip -r SonicFlow.ipa Payload
-          ls -lh SonicFlow.ipa
+          cp -r build/ABMusic.xcarchive/Products/Applications/ABMusic.app Payload/
+          zip -r ABMusic.ipa Payload
+          ls -lh ABMusic.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: SonicFlow-iOS
-          path: SonicFlow.ipa
+          name: ABMusic-iOS
+          path: ABMusic.ipa
           retention-days: 30
