@@ -8,6 +8,8 @@ import {
   StyleSheet,
   TextInput,
   Image,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,25 +25,34 @@ import { mixRadio } from '@/features/radio/strategies/mixRadio';
 import { RadioPicker, type RadioType } from '@/features/radio/RadioPicker';
 import { TrackItem } from '@/components/TrackItem';
 import { TrackContextMenu } from '@/components/TrackContextMenu';
+import { getHomeSections, type HomeSection } from '@/features/youtube/home';
 import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
 import type { ColorPalette } from '@/theme/colors';
 
+const GENRE_CHIPS = [
+  'Rock', 'Pop', 'Hip Hop', 'Jazz', 'Lo-fi',
+  'Electronic', 'R&B', 'Classical', 'Metal', 'Indie',
+];
+
 export default function HomeScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>([]);
+  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
+  const [isLoadingHome, setIsLoadingHome] = useState(false);
   const [isLoadingRadio, setIsLoadingRadio] = useState(false);
   const [radioType, setRadioType] = useState<RadioType>('artist');
   const [genreInput, setGenreInput] = useState('');
   const [contextTrack, setContextTrack] = useState<MusicTrack | null>(null);
   const currentTrackId = usePlayerStore((s) => s.queue[s.currentIndex]?.id);
 
-  // Load recent history on mount
+  // Load recent history and home sections on mount
   useEffect(() => {
     loadHistory();
+    loadHomeSections();
   }, []);
 
   const loadHistory = async () => {
@@ -53,14 +64,27 @@ export default function HomeScreen() {
     }
   };
 
-  // Start radio from a track (strategy depends on radioType)
+  const loadHomeSections = async () => {
+    setIsLoadingHome(true);
+    try {
+      const sections = await getHomeSections();
+      setHomeSections(sections);
+    } catch (e) {
+      if (__DEV__) console.warn('[Home] Failed to load sections:', e);
+    } finally {
+      setIsLoadingHome(false);
+    }
+  };
+
+  // Start radio from a track with a specific type
   const onStartRadio = useCallback(
-    async (track: MusicTrack) => {
+    async (track: MusicTrack, type?: RadioType) => {
+      const effectiveType = type ?? radioType;
       setIsLoadingRadio(true);
       try {
         let radioTracks: MusicTrack[] = [];
 
-        switch (radioType) {
+        switch (effectiveType) {
           case 'artist':
             radioTracks = await getRadioTracks(track.id);
             startRadio(artistRadio, track.id);
@@ -116,6 +140,60 @@ export default function HomeScreen() {
     return acc;
   }, []);
 
+  // Pick a random seed track from history
+  const getRandomSeed = useCallback((): MusicTrack | null => {
+    if (recentTracks.length === 0) return null;
+    return recentTracks[Math.floor(Math.random() * recentTracks.length)];
+  }, [recentTracks]);
+
+  // Start genre radio with a specific genre
+  const onGenreChipPress = useCallback(
+    async (genre: string) => {
+      setIsLoadingRadio(true);
+      setRadioType('genre');
+      setGenreInput(genre);
+      try {
+        const tracks = await genreRadio.generateTracks(genre);
+        startRadio(genreRadio, genre);
+        if (tracks.length > 0) {
+          usePlayerStore.getState().setRadioMode(true);
+          await playTracks(tracks, 0);
+        }
+      } catch {
+        // Ignore
+      } finally {
+        setIsLoadingRadio(false);
+      }
+    },
+    []
+  );
+
+  // Handle radio type button press — immediately starts playback
+  const onRadioButtonPress = useCallback(
+    (type: RadioType) => {
+      setRadioType(type);
+
+      // Genre just shows chips, doesn't auto-start
+      if (type === 'genre') return;
+
+      const seed = getRandomSeed();
+      if (!seed) {
+        Alert.alert('No history yet', 'Search and play a song first to seed the radio.');
+        return;
+      }
+
+      onStartRadio(seed, type);
+    },
+    [getRandomSeed, onStartRadio]
+  );
+
+  // Handle custom genre submit
+  const onCustomGenreSubmit = useCallback(() => {
+    const genre = genreInput.trim();
+    if (!genre) return;
+    onGenreChipPress(genre);
+  }, [genreInput, onGenreChipPress]);
+
   // Time-based greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -136,45 +214,139 @@ export default function HomeScreen() {
             {/* Radio type picker */}
             <View style={styles.radioSection}>
               <Text style={styles.sectionTitle}>Radio Mode</Text>
-              <RadioPicker selected={radioType} onSelect={setRadioType} />
+              <RadioPicker selected={radioType} onSelect={onRadioButtonPress} />
               {radioType === 'genre' && (
-                <TextInput
-                  style={styles.genreInput}
-                  placeholder="Enter genre (e.g., lo-fi, rock, jazz)..."
-                  placeholderTextColor={colors.textTertiary}
-                  value={genreInput}
-                  onChangeText={setGenreInput}
-                />
+                <>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.genreChipsRow}
+                  >
+                    {GENRE_CHIPS.map((genre) => (
+                      <TouchableOpacity
+                        key={genre}
+                        style={[
+                          styles.genreChip,
+                          genreInput === genre && styles.genreChipActive,
+                        ]}
+                        onPress={() => onGenreChipPress(genre)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.genreChipText,
+                            genreInput === genre && styles.genreChipTextActive,
+                          ]}
+                        >
+                          {genre}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                  <View style={styles.genreInputRow}>
+                    <TextInput
+                      style={styles.genreInput}
+                      placeholder="Custom genre..."
+                      placeholderTextColor={colors.textTertiary}
+                      value={genreInput}
+                      onChangeText={setGenreInput}
+                      onSubmitEditing={onCustomGenreSubmit}
+                      returnKeyType="go"
+                    />
+                    <TouchableOpacity
+                      style={[styles.genreGoBtn, !genreInput.trim() && styles.genreGoBtnDisabled]}
+                      onPress={onCustomGenreSubmit}
+                      disabled={!genreInput.trim()}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="play" size={16} color={genreInput.trim() ? colors.onPrimary : colors.textTertiary} />
+                    </TouchableOpacity>
+                  </View>
+                </>
               )}
             </View>
 
-            {/* Quick actions */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Quick Start</Text>
-              <View style={styles.quickActions}>
-                {recentTracks.slice(0, 4).map((track) => (
-                  <TouchableOpacity
-                    key={track.id}
-                    style={styles.quickCard}
-                    onPress={() => onStartRadio(track)}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={{ uri: track.thumbnail }}
-                      style={styles.quickThumb}
-                    />
-                    <View style={styles.quickInfo}>
-                      <Text style={styles.quickTitle} numberOfLines={1}>
+            {/* Quick actions from history */}
+            {recentTracks.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Quick Start</Text>
+                <View style={styles.quickActions}>
+                  {recentTracks.slice(0, 4).map((track) => (
+                    <TouchableOpacity
+                      key={track.id}
+                      style={styles.quickCard}
+                      onPress={() => onStartRadio(track)}
+                      activeOpacity={0.7}
+                    >
+                      <Image
+                        source={{ uri: track.thumbnail }}
+                        style={styles.quickThumb}
+                      />
+                      <View style={styles.quickInfo}>
+                        <Text style={styles.quickTitle} numberOfLines={1}>
+                          {track.title}
+                        </Text>
+                        <Text style={styles.quickArtist} numberOfLines={1}>
+                          {track.artist}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Loading radio indicator */}
+            {isLoadingRadio && (
+              <View style={styles.radioLoading}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.radioLoadingText}>Starting radio...</Text>
+              </View>
+            )}
+
+            {/* Trending / Recommendations sections */}
+            {isLoadingHome && homeSections.length === 0 && (
+              <View style={styles.homeLoading}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.radioLoadingText}>Loading recommendations...</Text>
+              </View>
+            )}
+
+            {homeSections.map((section, idx) => (
+              <View key={idx} style={styles.carouselSection}>
+                <Text style={styles.carouselTitle}>{section.title}</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.carouselContent}
+                >
+                  {section.tracks.map((track) => (
+                    <TouchableOpacity
+                      key={track.id}
+                      style={styles.carouselCard}
+                      onPress={() => onTrackPress(track)}
+                      onLongPress={() => setContextTrack(track)}
+                      activeOpacity={0.7}
+                    >
+                      <Image
+                        source={{ uri: track.thumbnail }}
+                        style={styles.carouselThumb}
+                      />
+                      <Text style={styles.carouselTrackTitle} numberOfLines={2}>
                         {track.title}
                       </Text>
-                      <Text style={styles.quickArtist} numberOfLines={1}>
+                      <Text style={styles.carouselArtist} numberOfLines={1}>
                         {track.artist}
                       </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
-              {recentTracks.length === 0 && (
+            ))}
+
+            {/* Empty state — only if no history AND no home sections */}
+            {recentTracks.length === 0 && homeSections.length === 0 && !isLoadingHome && (
+              <View style={styles.section}>
                 <View style={styles.emptyQuick}>
                   <Ionicons name="radio-outline" size={40} color={colors.textTertiary} />
                   <Text style={styles.emptyTitle}>Start listening</Text>
@@ -182,14 +354,6 @@ export default function HomeScreen() {
                     Search for songs to build your radio
                   </Text>
                 </View>
-              )}
-            </View>
-
-            {/* Loading radio indicator */}
-            {isLoadingRadio && (
-              <View style={styles.radioLoading}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.radioLoadingText}>Starting radio...</Text>
               </View>
             )}
 
@@ -261,15 +425,51 @@ const createStyles = (colors: ColorPalette) =>
       marginBottom: spacing.sm,
       paddingHorizontal: spacing.lg,
     },
+    genreChipsRow: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.xs,
+      paddingVertical: spacing.sm,
+    },
+    genreChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs + 2,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+    },
+    genreChipActive: {
+      backgroundColor: colors.primary,
+    },
+    genreChipText: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      fontWeight: '500',
+    },
+    genreChipTextActive: {
+      color: colors.onPrimary,
+    },
+    genreInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.xs,
+      gap: spacing.xs,
+    },
     genreInput: {
+      flex: 1,
       backgroundColor: colors.surfaceVariant,
       borderRadius: 10,
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.sm + 2,
       color: colors.text,
       fontSize: 14,
-      marginHorizontal: spacing.lg,
-      marginTop: spacing.sm,
+    },
+    genreGoBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      padding: spacing.sm + 2,
+    },
+    genreGoBtnDisabled: {
+      backgroundColor: colors.surface,
     },
     quickActions: {
       flexDirection: 'row',
@@ -326,9 +526,51 @@ const createStyles = (colors: ColorPalette) =>
       gap: spacing.sm,
       paddingVertical: spacing.sm,
     },
+    homeLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.xl,
+    },
     radioLoadingText: {
       color: colors.textSecondary,
       fontSize: 13,
+    },
+    // Horizontal carousel sections for trending/recommendations
+    carouselSection: {
+      marginBottom: spacing.lg,
+    },
+    carouselTitle: {
+      ...typography.h3,
+      color: colors.text,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    carouselContent: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    carouselCard: {
+      width: 140,
+    },
+    carouselThumb: {
+      width: 140,
+      height: 140,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+    },
+    carouselTrackTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '600',
+      marginTop: spacing.xs,
+      lineHeight: 17,
+    },
+    carouselArtist: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginTop: 2,
     },
     recentList: {
       paddingBottom: spacing.xl,
