@@ -91,4 +91,33 @@ export const CREATE_TABLES_SQL = `
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS track_engagement (
+    track_id TEXT PRIMARY KEY,
+    play_count INTEGER DEFAULT 0,
+    skip_count INTEGER DEFAULT 0,
+    total_listen_ms INTEGER DEFAULT 0,
+    last_played_at INTEGER,
+    last_skipped_at INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS artist_affinity (
+    artist_key TEXT PRIMARY KEY,
+    artist_name TEXT NOT NULL,
+    score REAL DEFAULT 0,
+    play_count INTEGER DEFAULT 0,
+    skip_count INTEGER DEFAULT 0,
+    updated_at INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS genre_cache (
+    artist_key TEXT PRIMARY KEY,
+    genres TEXT NOT NULL,
+    fetched_at INTEGER
+  );
 `;

@@ -9,6 +9,7 @@ import { formatRemaining } from './sleepTimer';
 import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
 import type { ColorPalette } from '@/theme/colors';
+import { FavoriteButton } from '@/components/FavoriteButton';
 
 // Sticky bar at the bottom of the screen showing the current track.
 // Tapping it opens the full player modal.
@@ -93,6 +94,16 @@ export function MiniPlayer() {
               {timerEndOfTrack ? '1x' : formatRemaining(timerRemaining)}
             </Text>
           </View>
+        )}
+
+        {/* Favorite button */}
+        {storeTrack && (
+          <TouchableOpacity
+            onPress={(e) => e.stopPropagation()}
+            activeOpacity={1}
+          >
+            <FavoriteButton track={storeTrack} size={20} />
+          </TouchableOpacity>
         )}
 
         <TouchableOpacity

@@ -9,6 +9,7 @@ import { PoTokenProvider } from '@/features/potoken/PoTokenProvider';
 import { useColors, useIsDark } from '@/theme/useColors';
 import { preWarmInnertube } from '@/features/youtube/client';
 import { usePlayerStore } from '@/core/store/playerStore';
+import { useSettingsStore } from '@/core/store/settingsStore';
 
 export default function RootLayout() {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -41,7 +42,8 @@ export default function RootLayout() {
     }
     setupPlayer();
     preWarmInnertube();
-    // Restore persisted queue from SQLite
+    // Restore persisted settings and queue from SQLite
+    useSettingsStore.getState().hydrate();
     usePlayerStore.getState().restoreFromDb();
     startSleepTimerLoop();
 

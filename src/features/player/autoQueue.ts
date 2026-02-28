@@ -1,6 +1,6 @@
 import { usePlayerStore } from '@/core/store/playerStore';
 import { useSettingsStore } from '@/core/store/settingsStore';
-import { artistRadio } from '@/features/radio/strategies/artistRadio';
+import { smartAutoplay } from '@/features/recommendation/smartAutoplay';
 
 let isAutoQueueing = false;
 
@@ -32,8 +32,8 @@ export async function triggerAutoQueue(): Promise<boolean> {
 
   isAutoQueueing = true;
   try {
-    console.log('[autoQueue] Fetching related tracks for:', currentTrack.title);
-    const tracks = await artistRadio.generateTracks(currentTrack.id);
+    console.log('[autoQueue] Fetching smart recommendations for:', currentTrack.title);
+    const tracks = await smartAutoplay.generateTracks(currentTrack.id);
 
     if (tracks.length === 0) return false;
 

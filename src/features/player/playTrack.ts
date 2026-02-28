@@ -6,6 +6,8 @@ import { addToHistory } from '@/features/library/history';
 import { getOfflineUrl } from '@/features/cache/offlineCache';
 import { cancelCrossfade } from './crossfade';
 import type { MusicTrack } from '@/features/youtube/types';
+import { trackPlayStarted } from '@/features/recommendation/engagement';
+import { notifyTrackPlayed } from '@/features/recommendation/tasteProfile';
 
 // Resolve a playable URL: offline cache → InnerTube VR (WebView).
 async function resolveForPlayback(trackId: string): Promise<string> {
@@ -42,6 +44,8 @@ export async function playTrackDirect(track: MusicTrack) {
   });
   await TrackPlayer.play();
   addToHistory(track).catch(() => {});
+  trackPlayStarted(track);
+  notifyTrackPlayed();
 }
 
 // Play a single track, preserving queue history so "previous" still works.
@@ -77,6 +81,8 @@ export async function playTrack(track: MusicTrack) {
     store.setQueue([track], 0);
   }
   addToHistory(track).catch(() => {});
+  trackPlayStarted(track);
+  notifyTrackPlayed();
 }
 
 // Play a list of tracks starting from a given index

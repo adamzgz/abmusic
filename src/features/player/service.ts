@@ -263,6 +263,14 @@ export async function PlaybackService() {
     console.log('[service] PlaybackActiveTrackChanged:', event.track?.id ?? 'null');
     checkEndOfTrackTimer();
 
+    // Engagement tracking: finalize previous track's listen session
+    if ((event as any).lastTrack?.id) {
+      try {
+        const { trackPlayEnded } = await import('@/features/recommendation/engagement');
+        trackPlayEnded((event as any).lastTrack.id).catch(() => {});
+      } catch { /* ignore */ }
+    }
+
     // Sync Zustand currentIndex with the actual playing track.
     // When TrackPlayer auto-advances through the native queue, currentIndex
     // falls out of sync because only manual skips update it.
