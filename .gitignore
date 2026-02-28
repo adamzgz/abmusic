@@ -42,3 +42,14 @@ yarn-error.*
 
 # native module build artifacts
 modules/**/build/
+
+# debug logs
+logcat_*.txt
+
+# build artifacts
+*.apk
+build-ios/
+
+# misc
+nul
+proxy.py

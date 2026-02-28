@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   ScrollView,
   Alert,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,11 +56,39 @@ export default function HomeScreen() {
   const [contextTrack, setContextTrack] = useState<MusicTrack | null>(null);
   const currentTrackId = usePlayerStore((s) => s.queue[s.currentIndex]?.id);
 
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasLoadedHome = useRef(false);
+
   // Load recent history and home sections on mount
   useEffect(() => {
     loadHistory();
     loadHomeSections();
   }, []);
+
+  // Retry loading home sections when app comes back to foreground (e.g. after reconnecting)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && !hasLoadedHome.current) {
+        loadHomeSections();
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Auto-retry every 10s while home sections are empty (no internet on startup)
+  useEffect(() => {
+    if (homeSections.length > 0) {
+      hasLoadedHome.current = true;
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+      return;
+    }
+    retryTimerRef.current = setInterval(() => {
+      if (!isLoadingHome) loadHomeSections();
+    }, 10_000);
+    return () => {
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+    };
+  }, [homeSections.length, isLoadingHome]);
 
   const loadHistory = async () => {
     try {

@@ -11,23 +11,27 @@ ABMusic is a YouTube Music streaming app built with Expo SDK 54 + React Native (
 ## Commands
 
 ```bash
+# Install dependencies (--legacy-peer-deps required due to React 19.1 vs 19.2 peer conflict)
+npm install --legacy-peer-deps
+
 # Development (requires dev-client build, not Expo Go)
 npx expo start --dev-client
 
 # Android dev build
 npx expo run:android
 
+# Android release APK
+cd android && ./gradlew assembleRelease
+# Output: android/app/build/outputs/apk/release/app-release.apk
+
 # iOS dev build
 npx expo run:ios
-
-# Install dependencies (--legacy-peer-deps required due to React 19.1 vs 19.2 peer conflict)
-npm install --legacy-peer-deps
 
 # TypeScript check
 npx tsc --noEmit
 ```
 
-**No test framework is configured yet.** `postinstall` runs `patch-package` automatically.
+**No test framework is configured yet.** `postinstall` runs `patch-package` automatically. JDK 17+ required for Gradle builds.
 
 ## Architecture
 

@@ -3,6 +3,7 @@ import { CREATE_TABLES_SQL } from './schema';
 import { migrations } from './migrations';
 
 let db: SQLite.SQLiteDatabase | null = null;
+let initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 // Run pending migrations based on user_version pragma.
 async function runMigrations(database: SQLite.SQLiteDatabase) {
@@ -25,20 +26,27 @@ async function runMigrations(database: SQLite.SQLiteDatabase) {
 }
 
 // Get or initialize the database singleton.
+// Uses a Promise lock to prevent concurrent initialization race conditions.
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) return db;
+  if (initPromise) return initPromise;
 
-  db = await SQLite.openDatabaseAsync('abmusic.db');
+  initPromise = (async () => {
+    const database = await SQLite.openDatabaseAsync('abmusic.db');
 
-  // Enable WAL mode for better concurrent read performance
-  await db.execAsync('PRAGMA journal_mode = WAL;');
-  await db.execAsync('PRAGMA foreign_keys = ON;');
+    // Enable WAL mode for better concurrent read performance
+    await database.execAsync('PRAGMA journal_mode = WAL;');
+    await database.execAsync('PRAGMA foreign_keys = ON;');
 
-  // Create tables
-  await db.execAsync(CREATE_TABLES_SQL);
+    // Create tables
+    await database.execAsync(CREATE_TABLES_SQL);
 
-  // Run any pending migrations
-  await runMigrations(db);
+    // Run any pending migrations
+    await runMigrations(database);
 
-  return db;
+    db = database;
+    return database;
+  })();
+
+  return initPromise;
 }
