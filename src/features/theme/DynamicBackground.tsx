@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import type { ArtworkColors } from './useDynamicColors';
-import { colors as themeColors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function DynamicBackground({ artworkColors }: Props) {
+  const colors = useColors();
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export function DynamicBackground({ artworkColors }: Props) {
 
   return (
     <AnimatedGradient
-      colors={[artworkColors.darkVibrant, themeColors.background]}
+      colors={[artworkColors.darkVibrant, colors.background]}
       locations={[0, 0.85]}
       style={[StyleSheet.absoluteFillObject, animatedStyle]}
     />

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import TrackPlayer from 'react-native-track-player';
 import { useLyrics } from './useLyrics';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
+import type { ColorPalette } from '@/theme/colors';
 
 interface Props {
   title: string | undefined;
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export function LyricsView({ title, artist, duration }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { lyrics, activeLine, isLoading, error } = useLyrics(title, artist, duration);
   const scrollRef = useRef<ScrollView>(null);
   const linePositions = useRef<Map<number, number>>(new Map());
@@ -75,7 +78,7 @@ export function LyricsView({ title, artist, duration }: Props) {
                 i < activeLine && styles.pastLine,
               ]}
             >
-              {line.text || '♪'}
+              {line.text || '\u266A'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -95,42 +98,43 @@ export function LyricsView({ title, artist, duration }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  statusText: {
-    color: colors.textTertiary,
-    fontSize: 14,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.md,
-  },
-  lyricLine: {
-    color: colors.textTertiary,
-    fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 34,
-    paddingVertical: spacing.xs,
-  },
-  activeLine: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  pastLine: {
-    color: colors.textSecondary,
-  },
-  plainLyrics: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    lineHeight: 26,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    statusText: {
+      color: colors.textTertiary,
+      fontSize: 14,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.md,
+    },
+    lyricLine: {
+      color: colors.textTertiary,
+      fontSize: 20,
+      fontWeight: '600',
+      lineHeight: 34,
+      paddingVertical: spacing.xs,
+    },
+    activeLine: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: '700',
+    },
+    pastLine: {
+      color: colors.textSecondary,
+    },
+    plainLyrics: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      lineHeight: 26,
+    },
+  });

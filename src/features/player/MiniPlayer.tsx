@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -6,12 +6,15 @@ import { usePlayer } from './usePlayer';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { useTimerStore } from '@/core/store/timerStore';
 import { formatRemaining } from './sleepTimer';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
+import type { ColorPalette } from '@/theme/colors';
 
 // Sticky bar at the bottom of the screen showing the current track.
 // Tapping it opens the full player modal.
 export function MiniPlayer() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { activeTrack, isPlaying, isBuffering, progress, togglePlayback, skipToNext, skipToPrevious } =
     usePlayer();
   const timerActive = useTimerStore((s) => s.isActive);
@@ -131,84 +134,85 @@ export function MiniPlayer() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    overflow: 'hidden',
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 12,
-  },
-  progressBar: {
-    height: 2,
-    backgroundColor: colors.border,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.sm + 2,
-  },
-  artworkContainer: {
-    position: 'relative',
-  },
-  artwork: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-  },
-  playingDot: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    borderWidth: 1.5,
-    borderColor: colors.surfaceElevated,
-  },
-  info: {
-    flex: 1,
-    marginLeft: spacing.sm + 2,
-    marginRight: spacing.sm,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  artist: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 1,
-  },
-  timerPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginRight: spacing.xs,
-  },
-  timerText: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  button: {
-    padding: spacing.sm,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.surfaceElevated,
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 14,
+      overflow: 'hidden',
+      // Shadow
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 12,
+    },
+    progressBar: {
+      height: 2,
+      backgroundColor: colors.border,
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.sm + 4,
+      paddingVertical: spacing.sm + 2,
+    },
+    artworkContainer: {
+      position: 'relative',
+    },
+    artwork: {
+      width: 44,
+      height: 44,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+    },
+    playingDot: {
+      position: 'absolute',
+      bottom: -1,
+      right: -1,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+      borderWidth: 1.5,
+      borderColor: colors.surfaceElevated,
+    },
+    info: {
+      flex: 1,
+      marginLeft: spacing.sm + 2,
+      marginRight: spacing.sm,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    artist: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginTop: 1,
+    },
+    timerPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 10,
+      marginRight: spacing.xs,
+    },
+    timerText: {
+      color: colors.primary,
+      fontSize: 10,
+      fontWeight: '700',
+    },
+    button: {
+      padding: spacing.sm,
+    },
+  });

@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "SonicFlow",
-    "slug": "sonicflow",
+    "name": "ABMusic",
+    "slug": "abmusic",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "scheme": "sonicflow",
+    "userInterfaceStyle": "automatic",
+    "scheme": "abmusic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -20,7 +20,7 @@
           "audio"
         ]
       },
-      "bundleIdentifier": "com.sonicflow.app"
+      "bundleIdentifier": "com.abmusic.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,7 +28,7 @@
         "backgroundColor": "#0a0a0a"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.sonicflow.app"
+      "package": "com.abmusic.app"
     },
     "plugins": [
       "expo-sqlite",

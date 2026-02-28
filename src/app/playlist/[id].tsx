@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,15 @@ import {
 import { playTrack, playTracks } from '@/features/player/playTrack';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { TrackItem } from '@/components/TrackItem';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 export default function PlaylistDetailScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const currentTrackId = usePlayerStore((s) => s.queue[s.currentIndex]?.id);
@@ -147,94 +150,95 @@ export default function PlaylistDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  backBtn: {
-    padding: spacing.xs,
-    marginRight: spacing.sm,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 2,
-  },
-  actions: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  playAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: 24,
-  },
-  playAllText: {
-    color: colors.onPrimary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  shuffleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surfaceVariant,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: 24,
-  },
-  shuffleText: {
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  trackRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trackItem: {
-    flex: 1,
-  },
-  removeBtn: {
-    padding: spacing.sm,
-    marginRight: spacing.sm,
-  },
-  listContent: {
-    paddingBottom: 100,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-  },
-  emptySubtitle: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    backBtn: {
+      padding: spacing.xs,
+      marginRight: spacing.sm,
+    },
+    headerInfo: {
+      flex: 1,
+    },
+    title: {
+      ...typography.h2,
+      color: colors.text,
+    },
+    subtitle: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginTop: 2,
+    },
+    actions: {
+      flexDirection: 'row',
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    playAllBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: 24,
+    },
+    playAllText: {
+      color: colors.onPrimary,
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    shuffleBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.surfaceVariant,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm + 2,
+      borderRadius: 24,
+    },
+    shuffleText: {
+      color: colors.primary,
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    trackRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    trackItem: {
+      flex: 1,
+    },
+    removeBtn: {
+      padding: spacing.sm,
+      marginRight: spacing.sm,
+    },
+    listContent: {
+      paddingBottom: 100,
+    },
+    empty: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xxl,
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      ...typography.h3,
+      color: colors.textSecondary,
+      marginTop: spacing.md,
+    },
+    emptySubtitle: {
+      ...typography.bodySmall,
+      color: colors.textTertiary,
+    },
+  });

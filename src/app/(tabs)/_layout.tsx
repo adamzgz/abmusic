@@ -1,15 +1,19 @@
-import { View, StyleSheet, Platform } from 'react-native';
+import { useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MiniPlayer } from '@/features/player/MiniPlayer';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
+import type { ColorPalette } from '@/theme/colors';
 
 const TAB_BAR_HEIGHT = 60;
 
 export default function TabLayout() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.container}>
@@ -83,16 +87,17 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  miniPlayerWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    elevation: 12,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    miniPlayerWrapper: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      zIndex: 100,
+      elevation: 12,
+    },
+  });

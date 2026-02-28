@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { addFavorite, removeFavorite, isFavorite } from '@/features/library/favorites';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import type { MusicTrack } from '@/features/youtube/types';
 
 interface FavoriteButtonProps {
@@ -11,6 +11,7 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ track, size = 22 }: FavoriteButtonProps) {
+  const colors = useColors();
   const [isFav, setIsFav] = useState(false);
 
   useEffect(() => {

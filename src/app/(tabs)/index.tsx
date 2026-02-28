@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   StyleSheet,
   TextInput,
   Image,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,12 +23,15 @@ import { mixRadio } from '@/features/radio/strategies/mixRadio';
 import { RadioPicker, type RadioType } from '@/features/radio/RadioPicker';
 import { TrackItem } from '@/components/TrackItem';
 import { TrackContextMenu } from '@/components/TrackContextMenu';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>([]);
   const [isLoadingRadio, setIsLoadingRadio] = useState(false);
   const [radioType, setRadioType] = useState<RadioType>('artist');
@@ -122,7 +124,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.greeting}>{greeting}</Text>
-        <Text style={styles.title}>SonicFlow</Text>
+        <Text style={styles.title}>ABMusic</Text>
       </View>
 
       <FlatList
@@ -225,112 +227,113 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  greeting: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.text,
-  },
-  radioSection: {
-    marginBottom: spacing.md,
-  },
-  section: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  genreInput: {
-    backgroundColor: colors.surfaceVariant,
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    color: colors.text,
-    fontSize: 14,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  quickCard: {
-    backgroundColor: colors.surfaceVariant,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '48%',
-    overflow: 'hidden',
-  },
-  quickThumb: {
-    width: 48,
-    height: 48,
-    backgroundColor: colors.surface,
-  },
-  quickInfo: {
-    flex: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  quickTitle: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  quickArtist: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    marginTop: 1,
-  },
-  emptyQuick: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  emptyText: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-    textAlign: 'center',
-  },
-  radioLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  radioLoadingText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-  },
-  recentList: {
-    paddingBottom: spacing.xl,
-  },
-  listContent: {
-    paddingBottom: 120,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+    },
+    greeting: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 2,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.text,
+    },
+    radioSection: {
+      marginBottom: spacing.md,
+    },
+    section: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    sectionTitle: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+      paddingHorizontal: spacing.lg,
+    },
+    genreInput: {
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 10,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      color: colors.text,
+      fontSize: 14,
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+    },
+    quickActions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    quickCard: {
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '48%',
+      overflow: 'hidden',
+    },
+    quickThumb: {
+      width: 48,
+      height: 48,
+      backgroundColor: colors.surface,
+    },
+    quickInfo: {
+      flex: 1,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    quickTitle: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    quickArtist: {
+      color: colors.textSecondary,
+      fontSize: 11,
+      marginTop: 1,
+    },
+    emptyQuick: {
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      ...typography.h3,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
+    emptyText: {
+      ...typography.bodySmall,
+      color: colors.textTertiary,
+      textAlign: 'center',
+    },
+    radioLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    radioLoadingText: {
+      color: colors.textSecondary,
+      fontSize: 13,
+    },
+    recentList: {
+      paddingBottom: spacing.xl,
+    },
+    listContent: {
+      paddingBottom: 120,
+    },
+  });

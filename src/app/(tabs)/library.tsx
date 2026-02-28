@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -26,10 +26,11 @@ import { playTrack } from '@/features/player/playTrack';
 import { TrackItem } from '@/components/TrackItem';
 import { TrackContextMenu } from '@/components/TrackContextMenu';
 import { ImportPlaylistSheet } from '@/components/ImportPlaylistSheet';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 type Tab = 'favorites' | 'playlists' | 'history' | 'downloads';
 
@@ -42,6 +43,8 @@ function formatBytes(bytes: number): string {
 }
 
 export default function LibraryScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [activeTab, setActiveTab] = useState<Tab>('favorites');
   const [favorites, setFavorites] = useState<MusicTrack[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -379,158 +382,159 @@ export default function LibraryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.text,
-  },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  tab: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-  },
-  tabActive: {
-    backgroundColor: colors.primary,
-  },
-  tabText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  tabTextActive: {
-    color: colors.onPrimary,
-  },
-  listContent: {
-    paddingBottom: 120,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-  },
-  emptySubtitle: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-  },
-  playlistItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-  },
-  playlistIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceVariant,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playlistInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  playlistName: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  playlistMeta: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  deleteBtn: {
-    padding: spacing.sm,
-  },
-  playlistActionsRow: {
-    paddingHorizontal: spacing.md,
-  },
-  playlistBtnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  newPlaylistBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  importBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  newPlaylistText: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  newPlaylistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  newPlaylistInput: {
-    flex: 1,
-    backgroundColor: colors.surfaceVariant,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.text,
-    fontSize: 14,
-  },
-  clearBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    alignSelf: 'flex-end',
-  },
-  clearText: {
-    color: colors.error,
-    fontSize: 13,
-  },
-  downloadRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  downloadTrack: {
-    flex: 1,
-  },
-  cacheSizeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  cacheSizeText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    title: {
+      ...typography.h1,
+      color: colors.text,
+    },
+    tabs: {
+      flexDirection: 'row',
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.sm,
+      gap: spacing.sm,
+    },
+    tab: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+    },
+    tabActive: {
+      backgroundColor: colors.primary,
+    },
+    tabText: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    tabTextActive: {
+      color: colors.onPrimary,
+    },
+    listContent: {
+      paddingBottom: 120,
+    },
+    empty: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xxl,
+      gap: spacing.sm,
+    },
+    emptyTitle: {
+      ...typography.h3,
+      color: colors.textSecondary,
+      marginTop: spacing.md,
+    },
+    emptySubtitle: {
+      ...typography.bodySmall,
+      color: colors.textTertiary,
+    },
+    playlistItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+    },
+    playlistIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    playlistInfo: {
+      flex: 1,
+      marginLeft: spacing.md,
+    },
+    playlistName: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    playlistMeta: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    deleteBtn: {
+      padding: spacing.sm,
+    },
+    playlistActionsRow: {
+      paddingHorizontal: spacing.md,
+    },
+    playlistBtnRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    newPlaylistBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    importBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    newPlaylistText: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    newPlaylistRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    newPlaylistInput: {
+      flex: 1,
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 8,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      color: colors.text,
+      fontSize: 14,
+    },
+    clearBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      alignSelf: 'flex-end',
+    },
+    clearText: {
+      color: colors.error,
+      fontSize: 13,
+    },
+    downloadRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    downloadTrack: {
+      flex: 1,
+    },
+    cacheSizeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    cacheSizeText: {
+      color: colors.textSecondary,
+      fontSize: 13,
+    },
+  });

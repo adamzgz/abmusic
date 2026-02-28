@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { playTracks } from '@/features/player/playTrack';
 import { formatTime } from '@/core/utils/formatTime';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 interface QueueViewProps {
   visible: boolean;
@@ -23,6 +24,8 @@ interface QueueViewProps {
 }
 
 export function QueueView({ visible, onClose }: QueueViewProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const queue = usePlayerStore((s) => s.queue);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
 
@@ -116,94 +119,95 @@ export function QueueView({ visible, onClose }: QueueViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: 48,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.text,
-  },
-  closeBtn: {
-    padding: spacing.xs,
-  },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  currentTrack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceVariant,
-    marginHorizontal: spacing.md,
-    borderRadius: 10,
-    gap: spacing.md,
-  },
-  thumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-    backgroundColor: colors.surface,
-  },
-  thumbnailSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
-    backgroundColor: colors.surface,
-  },
-  trackRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-  },
-  trackIndex: {
-    color: colors.textTertiary,
-    fontSize: 13,
-    width: 24,
-    textAlign: 'center',
-  },
-  trackInfo: {
-    flex: 1,
-  },
-  trackTitle: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  trackArtist: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  duration: {
-    color: colors.textTertiary,
-    fontSize: 12,
-  },
-  empty: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  emptyText: {
-    color: colors.textTertiary,
-    fontSize: 14,
-  },
-  listContent: {
-    paddingBottom: 40,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      paddingTop: 48,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+    },
+    title: {
+      ...typography.h2,
+      color: colors.text,
+    },
+    closeBtn: {
+      padding: spacing.xs,
+    },
+    sectionLabel: {
+      ...typography.caption,
+      color: colors.textTertiary,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    currentTrack: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      backgroundColor: colors.surfaceVariant,
+      marginHorizontal: spacing.md,
+      borderRadius: 10,
+      gap: spacing.md,
+    },
+    thumbnail: {
+      width: 48,
+      height: 48,
+      borderRadius: 6,
+      backgroundColor: colors.surface,
+    },
+    thumbnailSmall: {
+      width: 40,
+      height: 40,
+      borderRadius: 4,
+      backgroundColor: colors.surface,
+    },
+    trackRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    trackIndex: {
+      color: colors.textTertiary,
+      fontSize: 13,
+      width: 24,
+      textAlign: 'center',
+    },
+    trackInfo: {
+      flex: 1,
+    },
+    trackTitle: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    trackArtist: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    duration: {
+      color: colors.textTertiary,
+      fontSize: 12,
+    },
+    empty: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+    },
+    emptyText: {
+      color: colors.textTertiary,
+      fontSize: 14,
+    },
+    listContent: {
+      paddingBottom: 40,
+    },
+  });

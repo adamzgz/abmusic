@@ -19,10 +19,11 @@ import { QueueView } from '@/components/QueueView';
 import { useTimerStore } from '@/core/store/timerStore';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { formatRemaining } from './sleepTimer';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
 import { formatTime } from '@/core/utils/formatTime';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ARTWORK_SIZE = SCREEN_WIDTH - spacing.xl * 2;
@@ -32,6 +33,8 @@ type PlayerView = 'artwork' | 'lyrics';
 
 // Full-screen player view with large artwork, progress bar, and controls.
 export function FullPlayer() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     activeTrack,
     isPlaying,
@@ -277,150 +280,151 @@ export function FullPlayer() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  headerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    padding: spacing.sm,
-  },
-  headerSpacer: {
-    flex: 1,
-  },
-  timerBadge: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  artwork: {
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    marginBottom: spacing.xl,
-    // Shadow for album art
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  lyricsContainer: {
-    width: '100%',
-    marginBottom: spacing.xl,
-  },
-  info: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    width: '100%',
-    gap: spacing.md,
-  },
-  infoText: {
-    flex: 1,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  artist: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    marginTop: spacing.xs,
-  },
-  progressContainer: {
-    width: '100%',
-    marginBottom: spacing.md,
-  },
-  progressBarTouch: {
-    height: 24,
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 2,
-  },
-  seekThumb: {
-    position: 'absolute',
-    top: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    marginLeft: -4,
-  },
-  seekThumbActive: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    top: 5,
-    marginLeft: -7,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  time: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  sideBtn: {
-    padding: spacing.sm,
-    position: 'relative',
-  },
-  repeatOne: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    fontSize: 8,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  controlBtn: {
-    padding: spacing.sm,
-  },
-  playBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Shadow for play button
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xl,
+    },
+    headerBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    headerBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      padding: spacing.sm,
+    },
+    headerSpacer: {
+      flex: 1,
+    },
+    timerBadge: {
+      color: colors.primary,
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    artwork: {
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      marginBottom: spacing.xl,
+      // Shadow for album art
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 16,
+      elevation: 10,
+    },
+    lyricsContainer: {
+      width: '100%',
+      marginBottom: spacing.xl,
+    },
+    info: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+      width: '100%',
+      gap: spacing.md,
+    },
+    infoText: {
+      flex: 1,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: '700',
+      letterSpacing: -0.3,
+    },
+    artist: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      marginTop: spacing.xs,
+    },
+    progressContainer: {
+      width: '100%',
+      marginBottom: spacing.md,
+    },
+    progressBarTouch: {
+      height: 24,
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    progressBar: {
+      height: 4,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+      borderRadius: 2,
+    },
+    seekThumb: {
+      position: 'absolute',
+      top: 8,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+      marginLeft: -4,
+    },
+    seekThumbActive: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      top: 5,
+      marginLeft: -7,
+    },
+    timeRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 2,
+    },
+    time: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      fontVariant: ['tabular-nums'],
+    },
+    controls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      justifyContent: 'center',
+      gap: spacing.lg,
+    },
+    sideBtn: {
+      padding: spacing.sm,
+      position: 'relative',
+    },
+    repeatOne: {
+      position: 'absolute',
+      bottom: 4,
+      right: 4,
+      fontSize: 8,
+      fontWeight: '800',
+      color: colors.primary,
+    },
+    controlBtn: {
+      padding: spacing.sm,
+    },
+    playBtn: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      // Shadow for play button
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getColors } from 'react-native-image-colors';
-import { colors as themeColors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 
 export interface ArtworkColors {
   dominant: string;
@@ -8,21 +8,23 @@ export interface ArtworkColors {
   lightVibrant: string;
 }
 
-const DEFAULT_COLORS: ArtworkColors = {
-  dominant: themeColors.surface,
-  darkVibrant: themeColors.surfaceVariant,
-  lightVibrant: themeColors.primary,
-};
-
 // In-memory cache keyed by image URL
 const colorCache = new Map<string, ArtworkColors>();
 
 export function useDynamicColors(imageUrl: string | undefined): ArtworkColors {
-  const [artColors, setArtColors] = useState<ArtworkColors>(DEFAULT_COLORS);
+  const themeColors = useColors();
+
+  const defaultColors: ArtworkColors = {
+    dominant: themeColors.surface,
+    darkVibrant: themeColors.surfaceVariant,
+    lightVibrant: themeColors.primary,
+  };
+
+  const [artColors, setArtColors] = useState<ArtworkColors>(defaultColors);
 
   useEffect(() => {
     if (!imageUrl) {
-      setArtColors(DEFAULT_COLORS);
+      setArtColors(defaultColors);
       return;
     }
 
@@ -56,20 +58,20 @@ export function useDynamicColors(imageUrl: string | undefined): ArtworkColors {
             lightVibrant: result.secondary ?? themeColors.primary,
           };
         } else {
-          extracted = DEFAULT_COLORS;
+          extracted = defaultColors;
         }
 
         colorCache.set(imageUrl, extracted);
         setArtColors(extracted);
       })
       .catch(() => {
-        if (!cancelled) setArtColors(DEFAULT_COLORS);
+        if (!cancelled) setArtColors(defaultColors);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [imageUrl]);
+  }, [imageUrl, themeColors]);
 
   return artColors;
 }

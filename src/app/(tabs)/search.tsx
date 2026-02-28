@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,12 +17,15 @@ import { searchMusic, getSearchSuggestions } from '@/features/youtube/search';
 import { playTrack } from '@/features/player/playTrack';
 import { TrackItem } from '@/components/TrackItem';
 import { TrackContextMenu } from '@/components/TrackContextMenu';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 export default function SearchScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     query,
     results,
@@ -244,90 +247,91 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceVariant,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-    borderRadius: 28,
-    paddingHorizontal: spacing.md,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  input: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-    paddingVertical: 0,
-  },
-  clearBtn: {
-    padding: spacing.xs,
-  },
-  suggestionsContainer: {
-    marginHorizontal: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: colors.border,
-    marginBottom: spacing.sm,
-  },
-  suggestionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    gap: spacing.sm,
-  },
-  suggestionText: {
-    color: colors.text,
-    fontSize: 14,
-    flex: 1,
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-    padding: spacing.sm,
-    backgroundColor: 'rgba(207, 102, 121, 0.1)',
-    borderRadius: 8,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: 13,
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginTop: spacing.sm,
-  },
-  listContent: {
-    paddingBottom: 120, // Space for MiniPlayer + tab bar
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-  },
-  emptySubtitle: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceVariant,
+      marginHorizontal: spacing.md,
+      marginTop: spacing.sm,
+      marginBottom: spacing.sm,
+      borderRadius: 28,
+      paddingHorizontal: spacing.md,
+      height: 48,
+    },
+    searchIcon: {
+      marginRight: spacing.sm,
+    },
+    input: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 16,
+      paddingVertical: 0,
+    },
+    clearBtn: {
+      padding: spacing.xs,
+    },
+    suggestionsContainer: {
+      marginHorizontal: spacing.md,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 0.5,
+      borderColor: colors.border,
+      marginBottom: spacing.sm,
+    },
+    suggestionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm + 2,
+      gap: spacing.sm,
+    },
+    suggestionText: {
+      color: colors.text,
+      fontSize: 14,
+      flex: 1,
+    },
+    errorContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginHorizontal: spacing.md,
+      marginBottom: spacing.sm,
+      padding: spacing.sm,
+      backgroundColor: `${colors.error}1A`,
+      borderRadius: 8,
+    },
+    errorText: {
+      color: colors.error,
+      fontSize: 13,
+      flex: 1,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+    },
+    loadingText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      marginTop: spacing.sm,
+    },
+    listContent: {
+      paddingBottom: 120, // Space for MiniPlayer + tab bar
+    },
+    emptyTitle: {
+      ...typography.h3,
+      color: colors.textSecondary,
+      marginTop: spacing.md,
+    },
+    emptySubtitle: {
+      ...typography.bodySmall,
+      color: colors.textTertiary,
+    },
+  });

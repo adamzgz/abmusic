@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTimerStore } from '@/core/store/timerStore';
 import { formatRemaining } from '@/features/player/sleepTimer';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
+import type { ColorPalette } from '@/theme/colors';
 
 const PRESETS = [
   { label: '15 min', ms: 15 * 60 * 1000 },
@@ -19,6 +21,8 @@ interface Props {
 }
 
 export function SleepTimerSheet({ visible, onClose }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isActive, endOfTrack, remainingMs, startTimer, startEndOfTrack, cancel } =
     useTimerStore();
 
@@ -88,70 +92,71 @@ export function SleepTimerSheet({ visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.surfaceVariant,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: spacing.md,
-  },
-  activeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceVariant,
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.md,
-  },
-  activeText: {
-    flex: 1,
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  cancelBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-  },
-  cancelText: {
-    color: colors.error,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.divider,
-  },
-  optionText: {
-    color: colors.text,
-    fontSize: 16,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: colors.surfaceElevated,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xxl,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.surfaceVariant,
+      alignSelf: 'center',
+      marginTop: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '700',
+      marginBottom: spacing.md,
+    },
+    activeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.surfaceVariant,
+      padding: spacing.md,
+      borderRadius: 12,
+      marginBottom: spacing.md,
+    },
+    activeText: {
+      flex: 1,
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    cancelBtn: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+    },
+    cancelText: {
+      color: colors.error,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 0.5,
+      borderBottomColor: colors.divider,
+    },
+    optionText: {
+      color: colors.text,
+      fontSize: 16,
+    },
+  });

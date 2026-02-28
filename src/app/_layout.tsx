@@ -1,15 +1,17 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import TrackPlayer, { Capability } from 'react-native-track-player';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { startSleepTimerLoop, stopSleepTimerLoop } from '@/features/player/sleepTimer';
 import { PoTokenProvider } from '@/features/potoken/PoTokenProvider';
-import { colors } from '@/theme/colors';
+import { useColors, useIsDark } from '@/theme/useColors';
 
 export default function RootLayout() {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const colors = useColors();
+  const isDark = useIsDark();
 
   useEffect(() => {
     async function setupPlayer() {
@@ -43,9 +45,14 @@ export default function RootLayout() {
     };
   }, []);
 
+  const containerStyle = useMemo(
+    () => ({ flex: 1, backgroundColor: colors.background }),
+    [colors.background]
+  );
+
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <StatusBar style="light" />
+    <GestureHandlerRootView style={containerStyle}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <PoTokenProvider />
       <Stack
         screenOptions={{
@@ -71,10 +78,3 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-});

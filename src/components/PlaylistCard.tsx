@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
+import type { ColorPalette } from '@/theme/colors';
 
 interface PlaylistCardProps {
   name: string;
@@ -10,6 +12,9 @@ interface PlaylistCardProps {
 }
 
 export function PlaylistCard({ name, trackCount, onPress }: PlaylistCardProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.icon}>
@@ -28,33 +33,34 @@ export function PlaylistCard({ name, trackCount, onPress }: PlaylistCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  icon: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceVariant,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  info: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  name: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  count: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 2,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+    },
+    icon: {
+      width: 48,
+      height: 48,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    info: {
+      flex: 1,
+      marginLeft: spacing.md,
+    },
+    name: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    count: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginTop: 2,
+    },
+  });

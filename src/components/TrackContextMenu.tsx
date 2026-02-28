@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   StyleSheet,
   Image,
   FlatList,
-  TextInput,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { addFavorite, removeFavorite, isFavorite } from '@/features/library/favorites';
@@ -18,9 +16,10 @@ import {
   type Playlist,
 } from '@/features/library/playlists';
 import { usePlayerStore } from '@/core/store/playerStore';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
 import type { MusicTrack } from '@/features/youtube/types';
+import type { ColorPalette } from '@/theme/colors';
 
 interface TrackContextMenuProps {
   track: MusicTrack | null;
@@ -29,6 +28,8 @@ interface TrackContextMenuProps {
 }
 
 export function TrackContextMenu({ track, visible, onClose }: TrackContextMenuProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isFav, setIsFav] = useState(false);
   const [showPlaylists, setShowPlaylists] = useState(false);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -168,96 +169,97 @@ export function TrackContextMenu({ track, visible, onClose }: TrackContextMenuPr
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 40,
-    maxHeight: '60%',
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.textTertiary,
-  },
-  trackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  thumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-    backgroundColor: colors.surface,
-  },
-  trackInfo: {
-    flex: 1,
-  },
-  trackTitle: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  trackArtist: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    marginTop: 2,
-  },
-  divider: {
-    height: 0.5,
-    backgroundColor: colors.border,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 14,
-  },
-  menuText: {
-    color: colors.text,
-    fontSize: 15,
-  },
-  playlistHeader: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  playlistList: {
-    maxHeight: 200,
-  },
-  playlistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 12,
-  },
-  playlistName: {
-    color: colors.text,
-    fontSize: 15,
-  },
-  emptyText: {
-    color: colors.textTertiary,
-    fontSize: 14,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-});
+const createStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: colors.surfaceElevated,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingBottom: 40,
+      maxHeight: '60%',
+    },
+    handleContainer: {
+      alignItems: 'center',
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.xs,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.textTertiary,
+    },
+    trackHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+      gap: spacing.md,
+    },
+    thumbnail: {
+      width: 48,
+      height: 48,
+      borderRadius: 6,
+      backgroundColor: colors.surface,
+    },
+    trackInfo: {
+      flex: 1,
+    },
+    trackTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    trackArtist: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      marginTop: 2,
+    },
+    divider: {
+      height: 0.5,
+      backgroundColor: colors.border,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 14,
+    },
+    menuText: {
+      color: colors.text,
+      fontSize: 15,
+    },
+    playlistHeader: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      fontWeight: '600',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    playlistList: {
+      maxHeight: 200,
+    },
+    playlistRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 12,
+    },
+    playlistName: {
+      color: colors.text,
+      fontSize: 15,
+    },
+    emptyText: {
+      color: colors.textTertiary,
+      fontSize: 14,
+      textAlign: 'center',
+      paddingVertical: spacing.lg,
+    },
+  });

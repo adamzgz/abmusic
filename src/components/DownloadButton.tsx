@@ -10,7 +10,7 @@ import {
   onDownloadProgress,
 } from '@/features/cache/offlineCache';
 import type { MusicTrack } from '@/features/youtube/types';
-import { colors } from '@/theme/colors';
+import { useColors } from '@/theme/useColors';
 import { spacing } from '@/theme/spacing';
 
 interface Props {
@@ -23,6 +23,7 @@ const RADIUS = (CIRCLE_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function DownloadButton({ track }: Props) {
+  const colors = useColors();
   const [status, setStatus] = useState<'none' | 'downloading' | 'downloaded'>('none');
   const [progress, setProgress] = useState(0);
 
