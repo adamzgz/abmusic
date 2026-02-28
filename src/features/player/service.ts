@@ -1,6 +1,6 @@
 import TrackPlayer, { Event } from 'react-native-track-player';
 import { checkEndOfTrackTimer } from './sleepTimer';
-import { shouldCrossfade, executeCrossfade } from './crossfade';
+import { shouldCrossfade, executeCrossfade, cancelCrossfade } from './crossfade';
 
 // This service runs even when the UI is destroyed (background playback).
 // It handles remote events from lock screen / notification controls.
@@ -9,6 +9,7 @@ export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
   TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.reset());
   TrackPlayer.addEventListener(Event.RemoteNext, async () => {
+    cancelCrossfade(); // Restore volume if crossfading
     try {
       const queue = await TrackPlayer.getQueue();
       const idx = await TrackPlayer.getActiveTrackIndex();
@@ -23,6 +24,7 @@ export async function PlaybackService() {
     } catch { /* ignore */ }
   });
   TrackPlayer.addEventListener(Event.RemotePrevious, async () => {
+    cancelCrossfade(); // Restore volume if crossfading
     try {
       const { position } = await TrackPlayer.getProgress();
       if (position > 3) {

@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native';
 import { startSleepTimerLoop, stopSleepTimerLoop } from '@/features/player/sleepTimer';
 import { PoTokenProvider } from '@/features/potoken/PoTokenProvider';
 import { useColors, useIsDark } from '@/theme/useColors';
+import { preWarmInnertube } from '@/features/youtube/client';
 
 export default function RootLayout() {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -38,6 +39,7 @@ export default function RootLayout() {
       }
     }
     setupPlayer();
+    preWarmInnertube();
     startSleepTimerLoop();
 
     return () => {

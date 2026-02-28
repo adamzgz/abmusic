@@ -6,6 +6,7 @@ import TrackPlayer, {
   State,
   Event,
 } from 'react-native-track-player';
+import { cancelCrossfade } from './crossfade';
 
 // Main hook for interacting with the audio player.
 // Wraps react-native-track-player hooks with a cleaner API.
@@ -90,6 +91,7 @@ export function usePlayer() {
   }, []);
 
   const skipToNext = useCallback(async () => {
+    cancelCrossfade(); // Restore volume if crossfading
     const { usePlayerStore } = await import('@/core/store/playerStore');
     const store = usePlayerStore.getState();
     const { queue, currentIndex, repeatMode, shuffle } = store;
@@ -145,6 +147,7 @@ export function usePlayer() {
   }, []);
 
   const skipToPrevious = useCallback(async () => {
+    cancelCrossfade(); // Restore volume if crossfading
     // If more than 3s in, just restart current track
     try {
       const { position } = await TrackPlayer.getProgress();

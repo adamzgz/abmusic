@@ -1,42 +1,9 @@
-import Innertube, { ClientType, Platform } from 'youtubei.js';
-
-// Hermes eval shim for sig + n transforms
-Platform.shim.eval = async (
-  data: any,
-  env: { sig?: string; n?: string }
-): Promise<{ sig?: string; n?: string }> => {
-  if (__DEV__) {
-    console.log('[hermesEval] called, env:', JSON.stringify(Object.keys(env || {})));
-    console.log('[hermesEval] data.output length:', data?.output?.length);
-  }
-  try {
-    const exportedVars: any = eval(
-      `(function() { ${data.output}; return exportedVars; })()`
-    );
-    if (__DEV__) {
-      console.log('[hermesEval] exportedVars type:', typeof exportedVars,
-        'sigFn:', typeof exportedVars?.sigFunction,
-        'nFn:', typeof exportedVars?.nFunction);
-    }
-    const result: { sig?: string; n?: string } = {};
-    if (env.sig != null && typeof exportedVars?.sigFunction === 'function') {
-      result.sig = exportedVars.sigFunction(env.sig);
-    }
-    if (env.n != null && typeof exportedVars?.nFunction === 'function') {
-      result.n = exportedVars.nFunction(env.n);
-      if (__DEV__ && result.n === env.n) {
-        console.error('[hermesEval] WARNING: n-transform returned same value!');
-      }
-    }
-    if (__DEV__) console.log('[hermesEval] result:', JSON.stringify(result));
-    return result;
-  } catch (e: any) {
-    console.error('[hermesEval] ERROR:', e?.message ?? e);
-    throw e;
-  }
-};
+import Innertube, { ClientType } from 'youtubei.js';
 
 // --- Main instance (ANDROID) — for search, browse ---
+// retrieve_player: false skips downloading & parsing YouTube's player JS
+// (~10+ sec on Hermes). We don't need it because stream URLs are resolved
+// via the VR client (WebView with Chrome TLS), not via youtubei.js signatures.
 let innertubeInstance: Innertube | null = null;
 let initPromise: Promise<Innertube> | null = null;
 
@@ -46,6 +13,7 @@ export async function getInnertube(): Promise<Innertube> {
   if (!initPromise) {
     initPromise = Innertube.create({
       client_type: ClientType.ANDROID,
+      retrieve_player: false,
     }).then((instance) => {
       innertubeInstance = instance;
       return instance;
@@ -53,6 +21,13 @@ export async function getInnertube(): Promise<Innertube> {
   }
 
   return initPromise;
+}
+
+// Pre-warm Innertube on app startup so first search is instant
+export function preWarmInnertube() {
+  getInnertube().catch((e) => {
+    if (__DEV__) console.warn('[Innertube] pre-warm failed:', e?.message);
+  });
 }
 
 export function resetInnertube() {

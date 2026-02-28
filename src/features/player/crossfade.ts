@@ -53,9 +53,11 @@ export async function executeCrossfade(): Promise<void> {
     }
   } catch {
     // Ensure volume is restored on any error
-    await TrackPlayer.setVolume(1);
+    try { await TrackPlayer.setVolume(1); } catch {}
   } finally {
+    // ALWAYS restore volume — even if fade-in completed partially
     isFading = false;
+    try { await TrackPlayer.setVolume(1); } catch {}
   }
 }
 

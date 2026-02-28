@@ -4,6 +4,7 @@ import { usePlayerStore } from '@/core/store/playerStore';
 import { useSettingsStore } from '@/core/store/settingsStore';
 import { addToHistory } from '@/features/library/history';
 import { getOfflineUrl } from '@/features/cache/offlineCache';
+import { cancelCrossfade } from './crossfade';
 import type { MusicTrack } from '@/features/youtube/types';
 
 // Resolve a playable URL: offline cache → InnerTube VR (WebView).
@@ -25,6 +26,7 @@ async function resolveForPlayback(trackId: string): Promise<string> {
 
 // Play a track without resetting the logical queue (used by skip next/prev)
 export async function playTrackDirect(track: MusicTrack) {
+  cancelCrossfade(); // Restore volume to 1 if crossfade was in progress
   if (__DEV__) console.log('[playTrack] direct resolving:', track.id);
   const url = await resolveForPlayback(track.id);
   if (__DEV__) console.log('[playTrack] direct playing:', track.id);
@@ -44,6 +46,7 @@ export async function playTrackDirect(track: MusicTrack) {
 
 // Play a single track
 export async function playTrack(track: MusicTrack) {
+  cancelCrossfade(); // Restore volume to 1 if crossfade was in progress
   if (__DEV__) console.log('[playTrack] resolving:', track.id);
 
   const url = await resolveForPlayback(track.id);
@@ -69,6 +72,7 @@ export async function playTrack(track: MusicTrack) {
 
 // Play a list of tracks starting from a given index
 export async function playTracks(tracks: MusicTrack[], startIndex = 0) {
+  cancelCrossfade(); // Restore volume to 1 if crossfade was in progress
   const firstTrack = tracks[startIndex];
   const url = await resolveForPlayback(firstTrack.id);
 
