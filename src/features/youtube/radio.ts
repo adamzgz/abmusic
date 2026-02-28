@@ -11,13 +11,23 @@ export async function getRadioTracks(videoId: string): Promise<MusicTrack[]> {
   if (!upNext?.contents) return [];
 
   return upNext.contents
-    .map((item: any) => ({
-      id: item.video_id ?? item.id ?? '',
-      title: item.title ?? 'Unknown',
-      artist: item.artists?.[0]?.name ?? item.author ?? 'Unknown artist',
-      artistId: item.artists?.[0]?.channel_id,
-      duration: item.duration?.seconds ?? 0,
-      thumbnail: item.thumbnails?.[0]?.url ?? '',
-    }))
+    .map((item: any) => {
+      // YouTube sometimes returns title/artist as objects like {text, runs, rtl}
+      const rawTitle = item.title;
+      const title = typeof rawTitle === 'string' ? rawTitle
+        : rawTitle?.text ?? rawTitle?.toString?.() ?? 'Unknown';
+      const rawArtist = item.artists?.[0]?.name ?? item.author;
+      const artist = typeof rawArtist === 'string' ? rawArtist
+        : rawArtist?.text ?? rawArtist?.toString?.() ?? 'Unknown artist';
+
+      return {
+        id: item.video_id ?? item.id ?? '',
+        title,
+        artist,
+        artistId: item.artists?.[0]?.channel_id,
+        duration: item.duration?.seconds ?? 0,
+        thumbnail: item.thumbnails?.[0]?.url ?? '',
+      };
+    })
     .filter((track: MusicTrack) => track.id !== '' && track.id !== videoId);
 }

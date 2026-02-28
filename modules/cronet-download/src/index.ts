@@ -12,6 +12,14 @@ interface ProgressEvent {
 
 const CronetDownload = requireNativeModule('CronetDownload');
 
+/**
+ * Clear all WebView cookies and storage.
+ * Must be called before recycling WebView to get a truly fresh YouTube session.
+ */
+export async function clearWebViewCookies(): Promise<boolean> {
+  return CronetDownload.clearWebViewCookies();
+}
+
 type CronetEvents = {
   onDownloadProgress: (event: ProgressEvent) => void;
 };

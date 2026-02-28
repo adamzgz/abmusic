@@ -75,4 +75,20 @@ export const CREATE_TABLES_SQL = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_cached_audio_downloaded ON cached_audio(downloaded_at DESC);
+
+  CREATE TABLE IF NOT EXISTS player_queue (
+    position INTEGER PRIMARY KEY,
+    track_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    artist TEXT NOT NULL,
+    artist_id TEXT,
+    album TEXT,
+    duration INTEGER NOT NULL DEFAULT 0,
+    thumbnail TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS player_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `;

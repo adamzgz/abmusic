@@ -120,7 +120,13 @@ export function usePlayer() {
       if (repeatMode === 'all') {
         nextIndex = 0; // wrap around
       } else {
-        return; // no next track
+        // Try auto-queue before stopping
+        const { triggerAutoQueue } = await import('./autoQueue');
+        const added = await triggerAutoQueue();
+        if (!added) return; // no next track
+        // Re-read queue after auto-queue added tracks
+        const updated = usePlayerStore.getState();
+        if (nextIndex >= updated.queue.length) return;
       }
     }
 

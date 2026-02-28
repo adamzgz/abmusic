@@ -72,7 +72,9 @@ Two Expo native modules (TypeScript → Kotlin):
 - **Rolling queue:** Only 2 tracks ahead are pre-resolved into TrackPlayer. YouTube stream URLs expire after ~6 hours, so URLs are resolved just-in-time.
 - **Innertube singleton:** `features/youtube/client.ts` lazy-initializes one Innertube instance (ANDROID client) with session caching via react-native-mmkv. Used for search/browse only, NOT for stream URLs.
 - **Strategy pattern for radio:** `features/radio/engine.ts` accepts any `RadioStrategy` implementation. Four strategies: `artistRadio`, `discoveryRadio`, `genreRadio`, `mixRadio`.
-- **Audio format:** Typically Opus in WebM or AAC in M4A, selected by itag. Quality itags: high [251, 140], medium [250, 140], low [249, 250, 140].
+- **Audio format:** Opus in WebM or AAC in M4A, selected by itag. Quality itags: high [251, 140], medium [250, 140], low [249, 250, 140]. **iOS must use AAC [140] only** — AVPlayer doesn't support Opus.
+- **Auto-advance workaround:** ExoPlayer with Cronet doesn't reliably emit track-end events. The background service (`features/player/service.ts`) polls playback state every 1.5s to detect "Ended" state, and pre-resolves the next track ~10s before the current one ends. Up to 8 retries on PoToken failures.
+- **InnerTube VR rate limit:** 1500ms minimum between stream resolution requests, with 5-hour URL cache.
 
 ### State Management
 Four Zustand stores in `src/core/store/`:
@@ -100,8 +102,8 @@ Dark-only Material You palette in `src/theme/`. Primary: `#bb86fc`. Background: 
 ## Critical Configuration
 
 - `metro.config.js`: `unstable_enablePackageExports: true` — **required** for youtubei.js module resolution
-- `app.json`: `expo-router` plugin sets root to `./src/app`; iOS has audio background mode enabled; `newArchEnabled: true`; Android minSdk 24
-- `tsconfig.json`: `@/*` maps to `src/*` for imports
+- `app.json`: `expo-router` plugin sets root to `./src/app`; iOS has audio background mode enabled + deploymentTarget 15.1; `newArchEnabled: true`; Android minSdk 24 + `usesCleartextTraffic: true`
+- `tsconfig.json`: `@/*` maps to `src/*` for imports; `cronet-download` maps to `modules/cronet-download/src/index`
 - `babel.config.js`: `react-native-reanimated/plugin` must be last
 - `patches/react-native-track-player+4.1.2.patch`: Inlines KotlinAudio, adds Cronet + ExoPlayer 2.19.0
 

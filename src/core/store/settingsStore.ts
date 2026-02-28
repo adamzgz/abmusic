@@ -11,6 +11,7 @@ interface SettingsState {
   eqBands: number[]; // millibel levels per band
   lastFmApiKey: string;
   themeMode: ThemeMode;
+  autoQueue: boolean;
 
   setAudioQuality: (quality: AudioQuality) => void;
   setCrossfadeDuration: (seconds: number) => void;
@@ -19,6 +20,7 @@ interface SettingsState {
   setEqBands: (bands: number[]) => void;
   setLastFmApiKey: (key: string) => void;
   setThemeMode: (mode: ThemeMode) => void;
+  setAutoQueue: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -29,6 +31,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   eqBands: [0, 0, 0, 0, 0],
   lastFmApiKey: '',
   themeMode: 'dark',
+  autoQueue: true,
 
   setAudioQuality: (audioQuality) => set({ audioQuality }),
   setCrossfadeDuration: (crossfadeDuration) =>
@@ -38,4 +41,5 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setEqBands: (eqBands) => set({ eqBands, eqPreset: 'Custom' }),
   setLastFmApiKey: (lastFmApiKey) => set({ lastFmApiKey }),
   setThemeMode: (themeMode) => set({ themeMode }),
+  setAutoQueue: (autoQueue) => set({ autoQueue }),
 }));

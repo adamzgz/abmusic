@@ -12,6 +12,8 @@ import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 import android.os.Bundle
+import android.webkit.CookieManager
+import android.webkit.WebStorage
 
 class CronetDownloadModule : Module() {
     private val executor = Executors.newCachedThreadPool()
@@ -44,6 +46,20 @@ class CronetDownloadModule : Module() {
         Name("CronetDownload")
 
         Events("onDownloadProgress")
+
+        // Clear all WebView cookies and storage (for fresh YouTube sessions)
+        AsyncFunction("clearWebViewCookies") { promise: Promise ->
+            try {
+                val cm = CookieManager.getInstance()
+                cm.removeAllCookies { success ->
+                    cm.flush()
+                    WebStorage.getInstance().deleteAllData()
+                    promise.resolve(success)
+                }
+            } catch (e: Exception) {
+                promise.reject("COOKIE_ERROR", e.message ?: "Failed to clear cookies", e)
+            }
+        }
 
         // Chunked range-request download.
         // totalSize: pass contentLength from InnerTube (0 = unknown → single request fallback).

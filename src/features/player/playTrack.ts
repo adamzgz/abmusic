@@ -44,7 +44,8 @@ export async function playTrackDirect(track: MusicTrack) {
   addToHistory(track).catch(() => {});
 }
 
-// Play a single track
+// Play a single track, preserving queue history so "previous" still works.
+// Truncates any future tracks (after currentIndex) and appends the new one.
 export async function playTrack(track: MusicTrack) {
   cancelCrossfade(); // Restore volume to 1 if crossfade was in progress
   if (__DEV__) console.log('[playTrack] resolving:', track.id);
@@ -66,7 +67,15 @@ export async function playTrack(track: MusicTrack) {
 
   if (__DEV__) console.log('[playTrack] play() called');
 
-  usePlayerStore.getState().setQueue([track], 0);
+  // Keep history: take tracks up to (and including) the current one, then append new track
+  const store = usePlayerStore.getState();
+  const { queue, currentIndex } = store;
+  if (queue.length > 0) {
+    const history = queue.slice(0, currentIndex + 1);
+    store.setQueue([...history, track], history.length);
+  } else {
+    store.setQueue([track], 0);
+  }
   addToHistory(track).catch(() => {});
 }
 

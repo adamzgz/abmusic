@@ -2,6 +2,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Switch,
   StyleSheet,
   ScrollView,
 } from 'react-native';
@@ -34,6 +35,8 @@ export default function SettingsScreen() {
   const setCrossfadeDuration = useSettingsStore((s) => s.setCrossfadeDuration);
   const themeMode = useSettingsStore((s) => s.themeMode);
   const setThemeMode = useSettingsStore((s) => s.setThemeMode);
+  const autoQueue = useSettingsStore((s) => s.autoQueue);
+  const setAutoQueue = useSettingsStore((s) => s.setAutoQueue);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -143,6 +146,21 @@ export default function SettingsScreen() {
                 />
               </TouchableOpacity>
             </View>
+          </View>
+
+          <View style={styles.optionRow}>
+            <View style={styles.optionInfo}>
+              <Text style={styles.optionLabel}>Autoplay</Text>
+              <Text style={styles.optionDesc}>
+                Play related songs when queue ends
+              </Text>
+            </View>
+            <Switch
+              value={autoQueue}
+              onValueChange={setAutoQueue}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.text}
+            />
           </View>
         </View>
 
