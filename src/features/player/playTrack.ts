@@ -1,5 +1,6 @@
 import TrackPlayer from 'react-native-track-player';
 import { getStreamViaInnertubeVR } from '@/features/youtube/innertube-vr';
+import { getPipedStreamUrl } from '@/features/youtube/piped';
 import { usePlayerStore } from '@/core/store/playerStore';
 import { useSettingsStore } from '@/core/store/settingsStore';
 import { addToHistory } from '@/features/library/history';
@@ -9,19 +10,30 @@ import type { MusicTrack } from '@/features/youtube/types';
 import { trackPlayStarted } from '@/features/recommendation/engagement';
 import { notifyTrackPlayed } from '@/features/recommendation/tasteProfile';
 
-// Resolve a playable URL: offline cache → InnerTube VR (WebView).
+// Resolve a playable URL: offline cache → InnerTube VR → Piped fallback.
 async function resolveForPlayback(trackId: string): Promise<string> {
   const offlineUrl = await getOfflineUrl(trackId);
   if (offlineUrl) return offlineUrl;
 
   const quality = useSettingsStore.getState().audioQuality;
 
-  // InnerTube android_vr client via WebView (Chrome TLS)
-  // Returns pre-authenticated URLs — no decipher/sig transform needed.
-  const stream = await getStreamViaInnertubeVR(trackId, quality);
+  // Primary: InnerTube android_vr client via WebView (Chrome TLS)
+  try {
+    const stream = await getStreamViaInnertubeVR(trackId, quality);
+    if (__DEV__) {
+      console.log('[resolve] VR url length:', stream.url.length,
+        'itag:', stream.itag, 'mime:', stream.mimeType);
+    }
+    return stream.url;
+  } catch (vrError: any) {
+    if (__DEV__) console.warn('[resolve] VR failed, trying Piped fallback:', vrError?.message);
+  }
+
+  // Fallback: Piped API (server-side YouTube proxy)
+  const stream = await getPipedStreamUrl(trackId, quality);
   if (__DEV__) {
-    console.log('[resolve] VR url length:', stream.url.length,
-      'itag:', stream.itag, 'mime:', stream.mimeType);
+    console.log('[resolve] Piped url length:', stream.url.length,
+      'mime:', stream.mimeType, 'bitrate:', stream.bitrate);
   }
   return stream.url;
 }

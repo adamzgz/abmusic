@@ -9,21 +9,38 @@ import { QUALITY_ITAGS } from './types';
 
 const PLAYER_ENDPOINT = 'https://www.youtube.com/youtubei/v1/player';
 
+const VR_CLIENT_VERSION = '1.71.26';
+const VR_USER_AGENT =
+  'com.google.android.apps.youtube.vr.oculus/1.71.26 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip';
+
 function buildVRContext() {
   const visitorData = getVisitorData();
   return {
     client: {
       clientName: 'ANDROID_VR',
-      clientVersion: '1.71.26',
+      clientVersion: VR_CLIENT_VERSION,
       deviceMake: 'Oculus',
       deviceModel: 'Quest 3',
       androidSdkVersion: 32,
       osName: 'Android',
       osVersion: '12L',
+      userAgent: VR_USER_AGENT,
       hl: 'en',
       gl: 'US',
       ...(visitorData ? { visitorData } : {}),
     },
+  };
+}
+
+function buildVRHeaders(): Record<string, string> {
+  const visitorData = getVisitorData();
+  return {
+    'User-Agent': VR_USER_AGENT,
+    'X-YouTube-Client-Name': '28',
+    'X-YouTube-Client-Version': VR_CLIENT_VERSION,
+    'Origin': 'https://www.youtube.com',
+    'Referer': 'https://www.youtube.com/',
+    ...(visitorData ? { 'X-Goog-Visitor-Id': visitorData } : {}),
   };
 }
 
@@ -128,7 +145,7 @@ export async function getStreamViaInnertubeVR(
     ...(poToken ? { serviceIntegrityDimensions: { poToken } } : {}),
   };
 
-  const data = await youtubeApiCallViaWebView(PLAYER_ENDPOINT, body);
+  const data = await youtubeApiCallViaWebView(PLAYER_ENDPOINT, body, buildVRHeaders());
 
   // Check playability
   const playability = data?.playabilityStatus;
