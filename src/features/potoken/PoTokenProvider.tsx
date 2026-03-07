@@ -3,6 +3,7 @@ import { View, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { PO_TOKEN_HTML } from './potoken-html';
 import { fetchChallenge, fetchIntegrityToken } from './potoken-service';
+import { needsCookieClear, markCookiesCleared } from '@/core/upgradeCleanup';
 
 // --- Module-level state (singleton) ---
 
@@ -209,6 +210,23 @@ export function PoTokenProvider() {
 
   const startBotGuard = useCallback(async () => {
     if (__DEV__) console.log('[potoken] WebView loaded, starting BotGuard...');
+
+    // Clear stale YouTube cookies after app upgrade
+    if (needsCookieClear() && webViewRef.current) {
+      if (__DEV__) console.log('[potoken] Clearing stale cookies after upgrade...');
+      webViewRef.current.injectJavaScript(`
+        document.cookie.split(';').forEach(function(c) {
+          document.cookie = c.trim().split('=')[0] +
+            '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;domain=.youtube.com;path=/';
+        });
+        true;
+      `);
+      // Reset session state so ensureYouTubeSession fetches fresh cookies
+      _cookiesEstablished = false;
+      _visitorData = null;
+      _sessionPromise = null;
+      markCookiesCleared();
+    }
 
     try {
       const challenge = await fetchChallenge();
